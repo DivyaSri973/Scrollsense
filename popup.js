@@ -53,7 +53,7 @@ async function startSession() {
   const timeLimit = parseInt(document.getElementById('timeLimit').value);
   
   if (!intent) {
-    alert('Please set an intention for your session');
+    showMessage('Please set an intention for your session', 'error');
     return;
   }
   
@@ -208,7 +208,25 @@ async function saveSettings() {
   // Notify background script of settings change
   chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATE', settings });
   
-  alert('Settings saved!');
+  showMessage('Settings saved!', 'success');
+}
+
+function showMessage(text, type = 'info') {
+  // Remove any existing message
+  const existingMsg = document.querySelector('.popup-message');
+  if (existingMsg) existingMsg.remove();
+  
+  // Create message element
+  const msg = document.createElement('div');
+  msg.className = `popup-message popup-message-${type}`;
+  msg.textContent = text;
+  
+  // Insert at top of container
+  const container = document.querySelector('.container');
+  container.insertBefore(msg, container.firstChild);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => msg.remove(), 3000);
 }
 
 function updateUI() {

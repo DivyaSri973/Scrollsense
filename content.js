@@ -1,18 +1,16 @@
 // Content script for ScrollSense - runs on Instagram, LinkedIn, Reddit
-console.log('ScrollSense content script loaded');
 
 let currentSession = null;
 let settings = {};
 let blurLevel = 0;
 let nudgeShown = false;
 let lastActivityTime = Date.now();
+let monitorInterval = null;
 
 // Initialize
 init();
 
 function init() {
-  console.log('Initializing ScrollSense on:', window.location.hostname);
-  
   // Request current session from background
   chrome.runtime.sendMessage({ type: 'GET_SESSION' }, (response) => {
     if (response && response.session) {
@@ -32,8 +30,6 @@ function init() {
 }
 
 function handleMessage(message, sender, sendResponse) {
-  console.log('Content script received:', message.type);
-  
   switch (message.type) {
     case 'SESSION_ACTIVE':
       currentSession = message.session;
@@ -53,12 +49,16 @@ function handleMessage(message, sender, sendResponse) {
 }
 
 function startMonitoring() {
-  console.log('Starting session monitoring');
+  // Clear any existing interval to prevent memory leaks
+  if (monitorInterval) {
+    clearInterval(monitorInterval);
+  }
   
   // Update blur and check for nudges every 30 seconds
-  const monitorInterval = setInterval(() => {
+  monitorInterval = setInterval(() => {
     if (!currentSession || !currentSession.active) {
       clearInterval(monitorInterval);
+      monitorInterval = null;
       return;
     }
     
@@ -73,7 +73,12 @@ function startMonitoring() {
 }
 
 function stopMonitoring() {
-  console.log('Stopping session monitoring');
+  // Clear monitoring interval
+  if (monitorInterval) {
+    clearInterval(monitorInterval);
+    monitorInterval = null;
+  }
+  
   removeBlurOverlay();
   removeNudge();
   blurLevel = 0;

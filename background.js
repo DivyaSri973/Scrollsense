@@ -1,13 +1,10 @@
 // Background service worker for ScrollSense
-console.log('ScrollSense background service worker started');
 
 // Track active tabs and their time
 const activeTabs = new Map();
 
 // Listen for messages from popup and content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Message received:', message.type);
-  
   switch (message.type) {
     case 'SESSION_START':
       handleSessionStart(message.session);
@@ -82,8 +79,6 @@ function detectPlatform(url) {
 }
 
 async function handleSessionStart(session) {
-  console.log('Session started:', session);
-  
   // Create alarm to check session periodically
   chrome.alarms.create('checkSession', { periodInMinutes: 1 });
   
@@ -107,8 +102,6 @@ async function handleSessionStart(session) {
 }
 
 async function handleSessionEnd() {
-  console.log('Session ended');
-  
   // Clear alarm
   chrome.alarms.clear('checkSession');
   
@@ -129,7 +122,7 @@ async function handleSessionEnd() {
 }
 
 function handleSettingsUpdate(settings) {
-  console.log('Settings updated:', settings);
+  // Settings updated, could trigger re-evaluation of nudges
 }
 
 async function handleGetSession(sendResponse) {
@@ -251,8 +244,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 // Initialize on install
 chrome.runtime.onInstalled.addListener(async () => {
-  console.log('ScrollSense installed');
-  
   // Initialize storage with defaults
   const data = await chrome.storage.local.get(['settings', 'sessionHistory', 'dailyStats']);
   

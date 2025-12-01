@@ -9,8 +9,11 @@
   ],
   "host_permissions": [
     "https://www.instagram.com/*",
+    "https://instagram.com/*",
     "https://www.linkedin.com/*",
-    "https://www.reddit.com/*"
+    "https://linkedin.com/*",
+    "https://www.reddit.com/*",
+    "https://reddit.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -19,8 +22,11 @@
     {
       "matches": [
         "https://www.instagram.com/*",
+        "https://instagram.com/*",
         "https://www.linkedin.com/*",
-        "https://www.reddit.com/*"
+        "https://linkedin.com/*",
+        "https://www.reddit.com/*",
+        "https://reddit.com/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],
