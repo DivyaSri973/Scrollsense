@@ -95,8 +95,9 @@ function updateBlurOverlay() {
   }
   
   // Calculate blur level (0-10)
+  // Blur starts at 80% (blurThreshold) and reaches max at 130% (0.8 + 0.5 = 1.3x)
   const overTime = elapsed - blurThreshold;
-  const maxBlurTime = timeLimit * 0.5; // Reach max blur at 1.3x time limit
+  const maxBlurTime = timeLimit * 0.5; // 0.5x gives us the range from 80% to 130%
   blurLevel = Math.min(10, (overTime / maxBlurTime) * 10);
   
   applyBlurOverlay();

@@ -130,7 +130,7 @@ async function updateDailyStats(duration) {
   // Keep only last 30 days
   const dates = Object.keys(stats);
   if (dates.length > 30) {
-    const oldestDate = dates.sort()[0];
+    const oldestDate = dates.sort((a, b) => new Date(a) - new Date(b))[0];
     delete stats[oldestDate];
   }
   
@@ -163,6 +163,8 @@ function showActiveSession(session) {
   updateTimeSpent(session);
 }
 
+let updateTimeSpentTimer = null;
+
 function updateTimeSpent(session) {
   const elapsed = (Date.now() - session.startTime) / 1000 / 60; // minutes
   const elapsedRounded = Math.round(elapsed);
@@ -171,8 +173,13 @@ function updateTimeSpent(session) {
   document.getElementById('timeSpent').textContent = elapsedRounded;
   document.getElementById('progressFill').style.width = progress + '%';
   
+  // Clear previous timer to avoid memory leaks
+  if (updateTimeSpentTimer) {
+    clearTimeout(updateTimeSpentTimer);
+  }
+  
   if (session.active) {
-    setTimeout(() => updateTimeSpent(session), 10000); // Update every 10 seconds
+    updateTimeSpentTimer = setTimeout(() => updateTimeSpent(session), 10000); // Update every 10 seconds
   }
 }
 

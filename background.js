@@ -194,7 +194,7 @@ Nudge:`;
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-3-haiku-20240307', // Fast, cost-effective model for brief nudges
       max_tokens: 100,
       messages: [{
         role: 'user',
