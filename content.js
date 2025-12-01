@@ -276,10 +276,12 @@ function trackActivity() {
 }
 
 function detectCurrentPlatform() {
-  const hostname = window.location.hostname;
-  if (hostname.includes('instagram.com')) return 'Instagram';
-  if (hostname.includes('linkedin.com')) return 'LinkedIn';
-  if (hostname.includes('reddit.com')) return 'Reddit';
+  const hostname = window.location.hostname.toLowerCase();
+  
+  // Check if hostname exactly matches or is a subdomain of the platform
+  if (hostname === 'instagram.com' || hostname.endsWith('.instagram.com')) return 'Instagram';
+  if (hostname === 'linkedin.com' || hostname.endsWith('.linkedin.com')) return 'LinkedIn';
+  if (hostname === 'reddit.com' || hostname.endsWith('.reddit.com')) return 'Reddit';
   return 'social media';
 }
 

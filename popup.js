@@ -140,10 +140,18 @@ async function updateDailyStats(duration) {
 async function getCurrentPlatform() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tabs[0]) {
-    const url = tabs[0].url;
-    if (url.includes('instagram.com')) return 'instagram';
-    if (url.includes('linkedin.com')) return 'linkedin';
-    if (url.includes('reddit.com')) return 'reddit';
+    try {
+      const urlObj = new URL(tabs[0].url);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      // Check if hostname exactly matches or is a subdomain of the platform
+      if (hostname === 'instagram.com' || hostname.endsWith('.instagram.com')) return 'instagram';
+      if (hostname === 'linkedin.com' || hostname.endsWith('.linkedin.com')) return 'linkedin';
+      if (hostname === 'reddit.com' || hostname.endsWith('.reddit.com')) return 'reddit';
+    } catch (e) {
+      // Invalid URL or special chrome:// pages
+      return 'unknown';
+    }
   }
   return 'unknown';
 }

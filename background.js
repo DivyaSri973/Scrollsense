@@ -66,9 +66,18 @@ async function checkAndNotifyTab(tab) {
 }
 
 function detectPlatform(url) {
-  if (url.includes('instagram.com')) return 'instagram';
-  if (url.includes('linkedin.com')) return 'linkedin';
-  if (url.includes('reddit.com')) return 'reddit';
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // Check if hostname exactly matches or is a subdomain of the platform
+    if (hostname === 'instagram.com' || hostname.endsWith('.instagram.com')) return 'instagram';
+    if (hostname === 'linkedin.com' || hostname.endsWith('.linkedin.com')) return 'linkedin';
+    if (hostname === 'reddit.com' || hostname.endsWith('.reddit.com')) return 'reddit';
+  } catch (e) {
+    // Invalid URL
+    return null;
+  }
   return null;
 }
 
