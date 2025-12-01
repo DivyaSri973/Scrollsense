@@ -1,3 +1,13 @@
+# Chrome Extension
+*.crx
+*.pem
+.DS_Store
+*.zip
+
+# Test files
+test_*.html
+FEATURES.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

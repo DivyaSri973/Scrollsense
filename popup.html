@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScrollSense</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🧘 ScrollSense</h1>
+      <p class="tagline">Mindful social media time</p>
+    </div>
+
+    <div class="session-setup" id="sessionSetup">
+      <h2>Set Your Intention</h2>
+      <p class="question">What do you want to accomplish on social media?</p>
+      
+      <textarea 
+        id="intentInput" 
+        placeholder="E.g., Check messages for 5 minutes, catch up on friend updates..."
+        rows="3"
+      ></textarea>
+      
+      <div class="time-selection">
+        <label for="timeLimit">Time limit:</label>
+        <select id="timeLimit">
+          <option value="5">5 minutes</option>
+          <option value="10">10 minutes</option>
+          <option value="15">15 minutes</option>
+          <option value="20">20 minutes</option>
+          <option value="30">30 minutes</option>
+        </select>
+      </div>
+      
+      <button id="startSession" class="btn-primary">Start Session</button>
+    </div>
+
+    <div class="active-session" id="activeSession" style="display: none;">
+      <h2>Active Session</h2>
+      <div class="session-info">
+        <p><strong>Intention:</strong> <span id="currentIntent"></span></p>
+        <p><strong>Time limit:</strong> <span id="currentLimit"></span> minutes</p>
+        <p><strong>Time spent:</strong> <span id="timeSpent">0</span> minutes</p>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <button id="endSession" class="btn-secondary">End Session</button>
+    </div>
+
+    <div class="stats" id="stats">
+      <h3>Today's Usage</h3>
+      <div class="stat-grid">
+        <div class="stat-item">
+          <span class="stat-value" id="todayTotal">0</span>
+          <span class="stat-label">minutes total</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="todaySessions">0</span>
+          <span class="stat-label">sessions</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-toggle">
+      <button id="toggleSettings" class="btn-link">⚙️ Settings</button>
+    </div>
+
+    <div class="settings" id="settingsPanel" style="display: none;">
+      <h3>Settings</h3>
+      <div class="setting-item">
+        <label for="claudeApiKey">Claude API Key (optional):</label>
+        <input type="password" id="claudeApiKey" placeholder="sk-ant-...">
+        <small>For personalized AI nudges</small>
+      </div>
+      <div class="setting-item">
+        <label>
+          <input type="checkbox" id="enableBlur" checked>
+          Enable progressive blur
+        </label>
+      </div>
+      <div class="setting-item">
+        <label>
+          <input type="checkbox" id="enableNudges" checked>
+          Enable AI nudges
+        </label>
+      </div>
+      <button id="saveSettings" class="btn-primary">Save Settings</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

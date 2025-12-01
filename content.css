@@ -1,0 +1,106 @@
+/* ScrollSense Content Styles - Injected into social media pages */
+
+.scrollsense-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999998;
+  pointer-events: none;
+  transition: backdrop-filter 2s ease, background-color 2s ease;
+}
+
+.scrollsense-nudge {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 999999;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 420px;
+  width: 90%;
+  animation: scrollsense-slide-in 0.3s ease-out;
+}
+
+@keyframes scrollsense-slide-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.scrollsense-nudge-content {
+  padding: 24px;
+}
+
+.scrollsense-nudge-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.scrollsense-nudge-message {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.scrollsense-nudge-message p {
+  margin: 0;
+}
+
+.scrollsense-nudge-message strong {
+  color: #667eea;
+}
+
+.scrollsense-nudge-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.scrollsense-nudge-btn,
+.scrollsense-nudge-btn-secondary {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.scrollsense-nudge-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.scrollsense-nudge-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.scrollsense-nudge-btn-secondary {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.scrollsense-nudge-btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+/* Ensure nudge is visible on all platforms */
+.scrollsense-nudge * {
+  box-sizing: border-box;
+}
