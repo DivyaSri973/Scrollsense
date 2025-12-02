@@ -190,7 +190,15 @@ async function getAINudge(intendedTime, actualTime, userGoal, tone) {
     return generateFallbackMessage(intendedTime, actualTime, userGoal, messageTone);
   }
   
-  const prompt = `Generate a supportive, non-judgmental reminder for a user who planned to scroll ${intendedTime} minutes but has been scrolling ${actualTime} minutes. Their current goal is: ${userGoal || 'managing social media time'}. Keep the message under 20 words, with a ${messageTone} tone.`;
+  // Different prompts for active session vs post-session
+  let prompt;
+  if (intendedTime === 0) {
+    // Post-session nudge (user skipped session complete popup)
+    prompt = `Generate a supportive, non-judgmental reminder for a user who has been scrolling for ${actualTime} minutes after their session ended. Their current goal is: ${userGoal || 'managing social media time'}. Encourage them to start a new mindful session. Keep the message under 20 words, with a ${messageTone} tone.`;
+  } else {
+    // Active session nudge (during an active session)
+    prompt = `Generate a supportive, non-judgmental reminder for a user who planned to scroll ${intendedTime} minutes but has been scrolling ${actualTime} minutes. Their current goal is: ${userGoal || 'managing social media time'}. Keep the message under 20 words, with a ${messageTone} tone.`;
+  }
   
   try {
     const response = await fetch(API_URL, {
@@ -200,7 +208,7 @@ async function getAINudge(intendedTime, actualTime, userGoal, tone) {
         'Authorization': `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-8b-instant', // Fast and reliable Groq model
         messages: [
           {
             role: 'system',
@@ -217,7 +225,16 @@ async function getAINudge(intendedTime, actualTime, userGoal, tone) {
     });
     
     if (!response.ok) {
-      throw new Error('API request failed');
+      // Get error details from response
+      let errorMessage = 'API request failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error?.message || errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+        console.error('Groq API error details:', errorData);
+      } catch (e) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
     
     const result = await response.json();
@@ -227,30 +244,56 @@ async function getAINudge(intendedTime, actualTime, userGoal, tone) {
     }
     throw new Error('Empty Groq response');
   } catch (error) {
-    console.error('AI API error:', error);
+    console.error('AI API error:', error.message || error);
+    // Return fallback message on any error
     return generateFallbackMessage(intendedTime, actualTime, userGoal, messageTone);
   }
 }
 
 function generateFallbackMessage(intendedTime, actualTime, userGoal, tone) {
   const overTime = actualTime - intendedTime;
-  const messages = {
-    encouraging: [
-      `You've been scrolling ${actualTime} min. Ready to work on "${userGoal || 'your goals'}"? 🌟`,
-      `Time check: ${actualTime} min. You've got this! 💪`,
-      `${actualTime} minutes in. How about we tackle "${userGoal || 'that task'}" now?`
-    ],
-    neutral: [
-      `You've been scrolling ${actualTime} minutes.`,
-      `Time check: ${actualTime} min.`,
-      `Current session: ${actualTime} minutes.`
-    ],
-    direct: [
-      `Back to work. You've been scrolling ${actualTime} min.`,
-      `${actualTime} minutes up. Time to focus.`,
-      `Done scrolling? You've been on for ${actualTime} min.`
-    ]
-  };
+  
+  // Different messages for post-session vs active session
+  let messages;
+  if (intendedTime === 0) {
+    // Post-session messages
+    messages = {
+      encouraging: [
+        `You've been scrolling ${actualTime} min since your session ended. Ready to start a mindful session? 🌟`,
+        `Time check: ${actualTime} min. How about setting a new intention? 💪`,
+        `${actualTime} minutes scrolling. Ready to work on "${userGoal || 'your goals'}"?`
+      ],
+      neutral: [
+        `You've been scrolling ${actualTime} minutes since your session ended.`,
+        `Time check: ${actualTime} min.`,
+        `Current browsing: ${actualTime} minutes.`
+      ],
+      direct: [
+        `You've been scrolling ${actualTime} min. Start a new session?`,
+        `${actualTime} minutes up. Set a new intention.`,
+        `Time to be mindful. You've been on for ${actualTime} min.`
+      ]
+    };
+  } else {
+    // Active session messages
+    messages = {
+      encouraging: [
+        `You've been scrolling ${actualTime} min. Ready to work on "${userGoal || 'your goals'}"? 🌟`,
+        `Time check: ${actualTime} min. You've got this! 💪`,
+        `${actualTime} minutes in. How about we tackle "${userGoal || 'that task'}" now?`
+      ],
+      neutral: [
+        `You've been scrolling ${actualTime} minutes.`,
+        `Time check: ${actualTime} min.`,
+        `Current session: ${actualTime} minutes.`
+      ],
+      direct: [
+        `Back to work. You've been scrolling ${actualTime} min.`,
+        `${actualTime} minutes up. Time to focus.`,
+        `Done scrolling? You've been on for ${actualTime} min.`
+      ]
+    };
+  }
   
   const toneMessages = messages[tone] || messages.encouraging;
   return toneMessages[Math.floor(Math.random() * toneMessages.length)];
