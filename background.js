@@ -135,7 +135,7 @@ async function endSession(platform, actualTime) {
     const sessionData = {
       platform: session.platform,
       intendedTime: session.intent,
-      actualTime: Math.round(actualTime / 60), // Convert to minutes
+      actualTime: Math.round(actualTime / 60000), // Convert milliseconds to minutes
       date: new Date().toISOString()
     };
     
