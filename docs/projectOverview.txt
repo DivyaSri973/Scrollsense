@@ -1,0 +1,73 @@
+/**
+ * SCROLLSENSE - AI-Powered Social Media Time Management Chrome Extension
+ * 
+ * PROJECT CONTEXT:
+ * ScrollSense helps users manage social media time through AI-powered personalized interventions.
+ * Core features:
+ * 1. Session Intent Prompt - Ask users their goal when opening social media (5 min / 15 min / 30 min)
+ * 2. Progressive Blur Timer - Gradually blur screen after intended time expires
+ * 3. AI-Powered Nudges - grok API generates personalized messages based on user goals
+ * 4. Platform Detection - Different limits for Instagram (10 min), LinkedIn (30 min), Reddit (15 min)
+ * 5. Daily Tracking - Cumulative usage tracking across all platforms
+ * 6. Adaptive Learning - Suggest personalized defaults after 5+ sessions
+ * 
+ * TECH STACK:
+ * - Chrome Extension Manifest V3
+ * - Vanilla JavaScript (no frameworks)
+ * - Groq API for personalized messages
+ * - chrome.storage.local for data persistence
+ * - CSS filters for progressive blur effects
+ * 
+ * SUPPORTED PLATFORMS:
+ * - Instagram (instagram.com) - Focus on Reels addiction
+ * - LinkedIn (linkedin.com) - Professional networking
+ * - Reddit (reddit.com) - Mixed educational/entertainment
+ * 
+ * DATA STORAGE SCHEMA:
+ * - userGoals: Array of up to 3 user goals (e.g., "Finish thesis", "Apply to 5 jobs")
+ * - platformLimits: Object with time limits per platform in minutes
+ * - sessions: Array of session objects with intended vs actual time
+ * - dailyUsage: Object tracking cumulative time per platform today
+ * - preferences: Object with blur settings, message tone, daily limit
+ * - currentSession: Active session being tracked
+ * 
+ * USER PERSONAS:
+ * 1. Graduate Student - Sets 5-10 min intentions but stays 30+ min, struggles with Instagram Reels
+ * 2. Working Professional - Loses track of cumulative daily time across multiple sessions
+ * 
+ * KEY USER FLOWS:
+ * Flow 1 (New User):
+ * Onboarding → Set goals → Open Instagram → Intent prompt appears → Select "Quick check (5 min)" 
+ * → Scroll for 12 min → Screen blurs gradually → AI nudge: "You've been scrolling 12 min. 
+ * Ready to work on your thesis? 📚" → Click "Done for now" → Return to work
+ * 
+ * Flow 2 (Returning User):
+ * Open LinkedIn → Select "Specific task (15 min)" → Complete job application in 12 min 
+ * → Click "Done for now" → Dashboard shows: "Today: 45 min (Instagram: 28 min, LinkedIn: 17 min)"
+ * 
+ * Flow 3 (Settings):
+ * Open settings → Change Instagram limit to 15 min → Select "Direct" message tone 
+ * → Toggle blur intensity to 70% → Save → Next session respects new settings
+ * 
+ * DESIGN PRINCIPLES:
+ * - Progressive friction, not hard blocking (users can always continue)
+ * - Non-judgmental, supportive tone (avoid shame-based messaging)
+ * - Context-aware (different limits for different platforms)
+ * - Privacy-focused (all data stored locally, third-party tool not platform-integrated)
+ * - Adaptive (learns from user behavior, doesn't force generic limits)
+ * 
+ * AI INTEGRATION:
+ * Groq Prompt Template:
+ * "Generate a supportive, non-judgmental reminder for a user who planned to scroll 
+ * {intendedTime} minutes but has been scrolling {actualTime} minutes. Their current 
+ * goal is: {userGoal}. Keep the message under 20 words, with a {tone} tone."
+ * 
+ * Tones: encouraging ("You've got this!"), neutral ("Time check"), direct ("Back to work")
+ * 
+ * CRITICAL REQUIREMENTS:
+ * - Never use hard app blocking (causes override/abandonment)
+ * - Never use shame-based messaging (creates guilt cycles)
+ * - Always respect user autonomy (allow "Continue 10 more min")
+ * - Always make intentions explicit (anchor behavior to commitment)
+ * - Always distinguish purposeful vs idle use (context matters)
+ * 

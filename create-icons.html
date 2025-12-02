@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScrollSense Icon Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #6366f1;
+      margin-bottom: 20px;
+    }
+    .icon-preview {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    canvas {
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    button {
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #4f46e5;
+    }
+    .instructions {
+      background: #f0f9ff;
+      border: 2px solid #bae6fd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+    .instructions h3 {
+      margin-top: 0;
+      color: #0c4a6e;
+    }
+    .instructions ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .instructions li {
+      margin: 8px 0;
+      color: #0c4a6e;
+    }
+    #status-message {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ScrollSense Icon Generator</h1>
+    <p>Click the buttons below to generate placeholder icons for the Chrome extension.</p>
+    
+    <div class="icon-preview">
+      <div>
+        <canvas id="icon16" width="16" height="16"></canvas>
+        <p style="text-align: center; margin: 8px 0; font-size: 12px;">16x16</p>
+      </div>
+      <div>
+        <canvas id="icon48" width="48" height="48"></canvas>
+        <p style="text-align: center; margin: 8px 0; font-size: 12px;">48x48</p>
+      </div>
+      <div>
+        <canvas id="icon128" width="128" height="128"></canvas>
+        <p style="text-align: center; margin: 8px 0; font-size: 12px;">128x128</p>
+      </div>
+    </div>
+    
+    <div>
+      <button onclick="generateIcons()">Generate Icons</button>
+      <button onclick="saveIconsToFolder()" id="save-folder-btn">Save to Icons Folder</button>
+      <button onclick="downloadIcons()" id="download-btn" style="display: none;">Download All Icons (Fallback)</button>
+    </div>
+    
+    <div id="status-message" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
+    
+    <div class="instructions">
+      <h3>Instructions</h3>
+      <ol>
+        <li>Click "Generate Icons" to create placeholder icons (auto-generated on page load)</li>
+        <li><strong>Modern browsers:</strong> Click "Save to Icons Folder" and select your <code>icons/</code> folder - icons will be saved automatically!</li>
+        <li><strong>Older browsers:</strong> Icons will download automatically - move them to the <code>icons/</code> directory manually</li>
+        <li>Replace these placeholders with proper icons when ready</li>
+      </ol>
+      <p style="margin-top: 12px; font-size: 12px; color: #6b7280;">
+        <strong>Tip:</strong> The "Save to Icons Folder" button works best in Chrome/Edge. 
+        It will ask you to select the icons folder once, then save all three files automatically.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, size, size);
+      
+      // Create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#6366f1');
+      gradient.addColorStop(1, '#8b5cf6');
+      
+      // Draw rounded rectangle background
+      const radius = size * 0.2;
+      ctx.fillStyle = gradient;
+      roundRect(ctx, 0, 0, size, size, radius);
+      ctx.fill();
+      
+      // Draw clock/time icon
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = Math.max(1, size / 32);
+      
+      const centerX = size / 2;
+      const centerY = size / 2;
+      const clockRadius = size * 0.3;
+      
+      // Draw clock circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, clockRadius, 0, 2 * Math.PI);
+      ctx.stroke();
+      
+      // Draw clock hands
+      const hourHandLength = clockRadius * 0.5;
+      const minuteHandLength = clockRadius * 0.7;
+      
+      // Hour hand (pointing to 3)
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + hourHandLength * 0.7, centerY - hourHandLength * 0.3);
+      ctx.stroke();
+      
+      // Minute hand (pointing to 12)
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX, centerY - minuteHandLength);
+      ctx.stroke();
+    }
+    
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+    
+    function generateIcons() {
+      const sizes = [16, 48, 128];
+      sizes.forEach(size => {
+        const canvas = document.getElementById(`icon${size}`);
+        drawIcon(canvas, size);
+      });
+    }
+    
+    function downloadCanvas(canvas, filename) {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    
+    async function saveIconsToFolder() {
+      const statusDiv = document.getElementById('status-message');
+      const saveBtn = document.getElementById('save-folder-btn');
+      const downloadBtn = document.getElementById('download-btn');
+      
+      // Check if File System Access API is supported
+      if ('showDirectoryPicker' in window) {
+        try {
+          statusDiv.style.display = 'block';
+          statusDiv.style.background = '#f0f9ff';
+          statusDiv.style.border = '2px solid #bae6fd';
+          statusDiv.style.color = '#0c4a6e';
+          statusDiv.textContent = 'Select the icons folder...';
+          saveBtn.disabled = true;
+          
+          // Request directory access
+          const directoryHandle = await window.showDirectoryPicker();
+          
+          // Check if it's the icons folder (optional check)
+          const iconsFolderName = directoryHandle.name.toLowerCase();
+          if (!iconsFolderName.includes('icon')) {
+            const confirm = window.confirm(
+              'You selected: ' + directoryHandle.name + '\n\n' +
+              'Make sure this is the icons folder inside your ScrollSense directory.\n' +
+              'The icons folder should be named "icons".\n\n' +
+              'Continue?'
+            );
+            if (!confirm) {
+              statusDiv.style.display = 'none';
+              saveBtn.disabled = false;
+              return;
+            }
+          }
+          
+          statusDiv.textContent = 'Saving icons...';
+          
+          // Save each icon
+          const sizes = [16, 48, 128];
+          for (const size of sizes) {
+            const canvas = document.getElementById(`icon${size}`);
+            const filename = `icon${size}.png`;
+            
+            // Convert canvas to blob
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            
+            // Get file handle (create if doesn't exist)
+            let fileHandle;
+            try {
+              fileHandle = await directoryHandle.getFileHandle(filename, { create: true });
+            } catch (error) {
+              // File might be open, try to remove and recreate
+              try {
+                await directoryHandle.removeEntry(filename);
+                fileHandle = await directoryHandle.getFileHandle(filename, { create: true });
+              } catch (e) {
+                throw new Error('Could not create file: ' + filename);
+              }
+            }
+            
+            // Write file
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+          }
+          
+          statusDiv.style.background = '#d1fae5';
+          statusDiv.style.border = '2px solid #10b981';
+          statusDiv.style.color = '#065f46';
+          statusDiv.textContent = '✓ Icons saved successfully to ' + directoryHandle.name + ' folder!';
+          saveBtn.disabled = false;
+          
+        } catch (error) {
+          if (error.name === 'AbortError' || error.message.includes('cancel')) {
+            statusDiv.style.display = 'none';
+            saveBtn.disabled = false;
+            return;
+          }
+          
+          statusDiv.style.background = '#fee2e2';
+          statusDiv.style.border = '2px solid #ef4444';
+          statusDiv.style.color = '#991b1b';
+          statusDiv.textContent = 'Error: ' + error.message + '. Try using the download button instead.';
+          saveBtn.disabled = false;
+          downloadBtn.style.display = 'inline-block';
+        }
+      } else {
+        // Fallback: Use automatic downloads
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#fef3c7';
+        statusDiv.style.border = '2px solid #fbbf24';
+        statusDiv.style.color = '#92400e';
+        statusDiv.textContent = 'File System Access API not supported. Downloading icons automatically...';
+        
+        // Download with a small delay between each to avoid browser blocking
+        const sizes = [16, 48, 128];
+        for (let i = 0; i < sizes.length; i++) {
+          setTimeout(() => {
+            const canvas = document.getElementById(`icon${sizes[i]}`);
+            downloadCanvas(canvas, `icon${sizes[i]}.png`);
+            
+            if (i === sizes.length - 1) {
+              statusDiv.style.background = '#d1fae5';
+              statusDiv.style.border = '2px solid #10b981';
+              statusDiv.style.color = '#065f46';
+              statusDiv.textContent = '✓ Icons downloaded! Please move them to the icons/ folder manually.';
+            }
+          }, i * 300); // 300ms delay between downloads
+        }
+      }
+    }
+    
+    function downloadIcons() {
+      const sizes = [16, 48, 128];
+      sizes.forEach((size, index) => {
+        setTimeout(() => {
+          const canvas = document.getElementById(`icon${size}`);
+          downloadCanvas(canvas, `icon${size}.png`);
+        }, index * 300);
+      });
+    }
+    
+    // Generate icons on load
+    window.addEventListener('load', generateIcons);
+  </script>
+</body>
+</html>
+

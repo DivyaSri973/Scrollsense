@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScrollSense Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <header class="options-header">
+      <h1>ScrollSense Settings</h1>
+      <p class="header-subtitle">Manage your social media time with personalized controls</p>
+    </header>
+    
+    <div class="options-content">
+      <!-- Navigation Tabs -->
+      <nav class="options-nav">
+        <button class="nav-tab active" data-tab="dashboard">Dashboard</button>
+        <button class="nav-tab" data-tab="goals">Goals</button>
+        <button class="nav-tab" data-tab="limits">Time Limits</button>
+        <button class="nav-tab" data-tab="preferences">Preferences</button>
+        <button class="nav-tab" data-tab="api">API Settings</button>
+      </nav>
+      
+      <!-- Dashboard Tab -->
+      <div class="tab-content active" id="dashboard-tab">
+        <section class="options-section">
+          <h2>Today's Summary</h2>
+          <div class="dashboard-stats">
+            <div class="stat-card">
+              <div class="stat-label">Total Time</div>
+              <div class="stat-value" id="dashboard-total">0 min</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Sessions</div>
+              <div class="stat-value" id="dashboard-sessions">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Platforms Used</div>
+              <div class="stat-value" id="dashboard-platforms">0</div>
+            </div>
+          </div>
+          
+          <h2 style="margin-top: 32px;">Platform Breakdown</h2>
+          <div class="platform-chart" id="platform-chart">
+            <!-- Chart will be inserted here -->
+          </div>
+          
+          <h2 style="margin-top: 32px;">Recent Sessions</h2>
+          <div class="sessions-list" id="sessions-list">
+            <!-- Sessions will be inserted here -->
+          </div>
+        </section>
+      </div>
+      
+      <!-- Goals Tab -->
+      <div class="tab-content" id="goals-tab">
+        <section class="options-section">
+          <h2>Your Goals</h2>
+          <p class="section-description">Set up to 3 personal goals to help stay focused</p>
+          
+          <div class="goals-list" id="goals-list">
+            <!-- Goals will be inserted here -->
+          </div>
+          
+          <button id="add-goal-btn" class="btn btn-secondary">+ Add Goal</button>
+          
+          <div id="goal-input-container" style="display: none; margin-top: 16px;">
+            <input type="text" id="goal-input" class="input" placeholder="Enter your goal (e.g., Finish thesis, Apply to 5 jobs)">
+            <div class="input-actions">
+              <button id="save-goal-btn" class="btn btn-primary">Save</button>
+              <button id="cancel-goal-btn" class="btn btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      <!-- Limits Tab -->
+      <div class="tab-content" id="limits-tab">
+        <section class="options-section">
+          <h2>Platform Time Limits</h2>
+          <p class="section-description">Set default time limits for each platform (in minutes)</p>
+          
+          <div class="limits-list">
+            <div class="limit-item">
+              <div class="limit-info">
+                <span class="limit-platform">Instagram</span>
+                <span class="limit-description">Focus on Reels addiction</span>
+              </div>
+              <input type="number" id="limit-instagram" class="limit-input" min="5" max="120" step="5" value="10">
+              <span class="limit-unit">min</span>
+            </div>
+            
+            <div class="limit-item">
+              <div class="limit-info">
+                <span class="limit-platform">LinkedIn</span>
+                <span class="limit-description">Professional networking</span>
+              </div>
+              <input type="number" id="limit-linkedin" class="limit-input" min="5" max="120" step="5" value="30">
+              <span class="limit-unit">min</span>
+            </div>
+            
+            <div class="limit-item">
+              <div class="limit-info">
+                <span class="limit-platform">Reddit</span>
+                <span class="limit-description">Mixed educational/entertainment</span>
+              </div>
+              <input type="number" id="limit-reddit" class="limit-input" min="5" max="120" step="5" value="15">
+              <span class="limit-unit">min</span>
+            </div>
+          </div>
+          
+          <div class="daily-limit-section">
+            <h3>Daily Limit</h3>
+            <p class="section-description">Total time across all platforms per day</p>
+            <div class="daily-limit-input">
+              <input type="number" id="daily-limit" class="limit-input" min="30" max="480" step="30" value="120">
+              <span class="limit-unit">min</span>
+            </div>
+          </div>
+          
+          <button id="save-limits-btn" class="btn btn-primary">Save Limits</button>
+        </section>
+      </div>
+      
+      <!-- Preferences Tab -->
+      <div class="tab-content" id="preferences-tab">
+        <section class="options-section">
+          <h2>Preferences</h2>
+          
+          <div class="preference-group">
+            <label class="preference-label">Blur Intensity</label>
+            <p class="preference-description">How much the screen blurs after time limit (0-100%)</p>
+            <div class="slider-container">
+              <input type="range" id="blur-intensity" class="slider" min="0" max="100" value="50" step="10">
+              <span class="slider-value" id="blur-value">50%</span>
+            </div>
+          </div>
+          
+          <div class="preference-group">
+            <label class="preference-label">Message Tone</label>
+            <p class="preference-description">Tone of AI-generated reminders</p>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="message-tone" value="encouraging" checked>
+                <span>Encouraging ("You've got this!")</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="message-tone" value="neutral">
+                <span>Neutral ("Time check")</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="message-tone" value="direct">
+                <span>Direct ("Back to work")</span>
+              </label>
+            </div>
+          </div>
+          
+          <button id="save-preferences-btn" class="btn btn-primary">Save Preferences</button>
+        </section>
+      </div>
+      
+      <!-- API Settings Tab -->
+      <div class="tab-content" id="api-tab">
+        <section class="options-section">
+          <h2>AI Integration</h2>
+          <p class="section-description">Configure Groq (GroqCloud) for personalized nudges (optional)</p>
+          
+          <div class="api-info">
+            <p>ScrollSense uses Groq's fast, efficient GenAI models to generate personalized, context-aware reminders based on your goals and usage patterns.</p>
+            <p style="margin-top: 8px;"><strong>Privacy:</strong> Your API key is stored locally and never shared. All data stays on your device.</p>
+          </div>
+          
+          <div class="input-group">
+            <label for="api-key" class="input-label">Groq API Key</label>
+            <input type="password" id="api-key" class="input" placeholder="gsk_...">
+            <p class="input-hint">Get your API key from the <a href="https://console.groq.com/" target="_blank">Groq Console</a></p>
+          </div>
+          
+          <button id="save-api-btn" class="btn btn-primary">Save API Key</button>
+          
+          <div class="api-status" id="api-status" style="display: none;">
+            <p class="status-message"></p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  
+  <script src="options.js"></script>
+</body>
+</html>
+
