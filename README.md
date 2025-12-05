@@ -2,7 +2,7 @@
 
 ### AI-Powered Mindful Social Media Time Management
 
-<p align="center">
+<p align="left">
   <strong>Scroll mindfully, not mindlessly.</strong>
 </p>
 
