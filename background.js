@@ -113,6 +113,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     updateDailyUsage(request.platform, request.minutes).then(sendResponse);
     return true;
   }
+  
+  if (request.action === 'analyzeTrends') {
+    analyzeTrendsWithAI(request.data).then(sendResponse);
+    return true;
+  }
 });
 
 async function startSession(intent, platform) {
@@ -297,6 +302,92 @@ function generateFallbackMessage(intendedTime, actualTime, userGoal, tone) {
   
   const toneMessages = messages[tone] || messages.encouraging;
   return toneMessages[Math.floor(Math.random() * toneMessages.length)];
+}
+
+// Analyze trends with AI for insights page
+async function analyzeTrendsWithAI(usageData) {
+  const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+  
+  const data = await chrome.storage.local.get(['apiKey', 'userGoals']);
+  const API_KEY = data.apiKey;
+  const userGoals = data.userGoals || [];
+  
+  if (!API_KEY) {
+    return { analysis: null, error: 'No API key configured' };
+  }
+  
+  // Build a comprehensive prompt for trend analysis
+  const platformSummary = Object.entries(usageData.platforms)
+    .map(([platform, stats]) => `${platform}: ${stats.total}min total, ${stats.overtime}min overtime, ${stats.sessions} sessions`)
+    .join('; ');
+  
+  const prompt = `You are ScrollSense, an AI assistant helping users understand their social media usage patterns. Analyze this week's usage data and provide personalized insights.
+
+User's Data Summary:
+- Total weekly screen time: ${usageData.weeklyTotalMinutes} minutes (${Math.round(usageData.weeklyTotalMinutes / 60 * 10) / 10} hours)
+- Average daily usage: ${usageData.averageDailyMinutes} minutes
+- Total sessions this week: ${usageData.totalSessions}
+- Goal adherence rate: ${usageData.goalAdherenceAvg}%
+- Peak usage hours: ${usageData.peakUsageHours.join(', ')}
+- Platform breakdown: ${platformSummary}
+${userGoals.length > 0 ? `- User's stated goals: ${userGoals.join(', ')}` : ''}
+
+Please provide a brief, friendly analysis (max 200 words) covering:
+1. A key observation about their usage pattern
+2. What's going well (if anything)
+3. One specific area for improvement
+4. A practical, actionable tip
+
+Keep the tone supportive and non-judgmental. Use simple language and be encouraging. Don't use bullet points - write in short paragraphs.`;
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are ScrollSense, a friendly and supportive AI that helps users build healthier social media habits. You provide insightful, personalized analysis without being preachy or judgmental.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 400
+      })
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'API request failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error?.message || `HTTP ${response.status}`;
+        console.error('Groq API error:', errorData);
+      } catch (e) {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    const result = await response.json();
+    const analysis = result.choices?.[0]?.message?.content?.trim();
+    
+    if (analysis) {
+      return { analysis, success: true };
+    }
+    
+    throw new Error('Empty response from AI');
+  } catch (error) {
+    console.error('AI trend analysis error:', error);
+    return { analysis: null, error: error.message };
+  }
 }
 
 // Get adaptive suggestions after 5+ sessions

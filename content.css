@@ -244,6 +244,52 @@
   text-align: center;
 }
 
+/* ScrollSense AI Badge */
+.scrollsense-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  animation: badgePulse 3s ease-in-out infinite;
+}
+
+.scrollsense-ai-icon {
+  font-size: 14px;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.scrollsense-ai-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15) rotate(10deg);
+    opacity: 0.9;
+  }
+}
+
 .scrollsense-nudge-text {
   font-size: 18px;
   color: #1a1a1a;

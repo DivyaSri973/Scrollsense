@@ -21,6 +21,7 @@
         <button class="nav-tab" data-tab="limits">Time Limits</button>
         <button class="nav-tab" data-tab="preferences">Preferences</button>
         <button class="nav-tab" data-tab="api">API Settings</button>
+        <button class="nav-tab" data-tab="insights">AI Insights</button>
       </nav>
       
       <!-- Dashboard Tab -->
@@ -182,6 +183,121 @@
           
           <div class="api-status" id="api-status" style="display: none;">
             <p class="status-message"></p>
+          </div>
+        </section>
+      </div>
+      
+      <!-- AI Insights Tab -->
+      <div class="tab-content" id="insights-tab">
+        <section class="options-section">
+          <h2>📊 AI-Powered Usage Insights</h2>
+          <p class="section-description">Discover patterns in your social media usage with AI-generated analysis</p>
+          
+          <!-- Data Controls -->
+          <div class="insights-controls">
+            <button id="load-demo-data-btn" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 6px;">
+                <path d="M8 1V5M8 5L6 3M8 5L10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="2" y="6" width="12" height="8" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="5" cy="10" r="1" fill="currentColor"/>
+                <circle cx="8" cy="10" r="1" fill="currentColor"/>
+                <circle cx="11" cy="10" r="1" fill="currentColor"/>
+              </svg>
+              Load Demo Data
+            </button>
+            <button id="analyze-trends-btn" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 6px;">
+                <path d="M2 14L6 9L9 12L14 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10 5H14V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Analyze My Trends
+            </button>
+            <button id="clear-insights-data-btn" class="btn btn-danger">
+              Clear Data
+            </button>
+          </div>
+          
+          <!-- Weekly Stats Overview -->
+          <div class="insights-section">
+            <h3>📈 Weekly Overview</h3>
+            <div class="weekly-stats-grid" id="weekly-stats-grid">
+              <div class="weekly-stat-card">
+                <div class="weekly-stat-icon">⏱️</div>
+                <div class="weekly-stat-value" id="weekly-total-time">--</div>
+                <div class="weekly-stat-label">Total Time</div>
+              </div>
+              <div class="weekly-stat-card">
+                <div class="weekly-stat-icon">📱</div>
+                <div class="weekly-stat-value" id="weekly-sessions">--</div>
+                <div class="weekly-stat-label">Sessions</div>
+              </div>
+              <div class="weekly-stat-card">
+                <div class="weekly-stat-icon">🎯</div>
+                <div class="weekly-stat-value" id="weekly-goal-adherence">--</div>
+                <div class="weekly-stat-label">Goal Adherence</div>
+              </div>
+              <div class="weekly-stat-card">
+                <div class="weekly-stat-icon">📊</div>
+                <div class="weekly-stat-value" id="weekly-avg-session">--</div>
+                <div class="weekly-stat-label">Avg Session</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Trend Chart -->
+          <div class="insights-section">
+            <h3>📉 7-Day Usage Trend</h3>
+            <div class="trend-chart-container" id="trend-chart">
+              <div class="trend-chart-placeholder">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 38L16 26L24 34L44 10" stroke="#9ca3af" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M34 10H44V20" stroke="#9ca3af" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p>Load data to see your usage trends</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Platform Comparison -->
+          <div class="insights-section">
+            <h3>🔄 Platform Comparison</h3>
+            <div class="platform-comparison" id="platform-comparison">
+              <div class="platform-comparison-placeholder">
+                <p>Load data to compare platform usage</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- AI Analysis -->
+          <div class="insights-section ai-analysis-section">
+            <h3>🤖 AI Analysis</h3>
+            <div class="ai-analysis-container" id="ai-analysis">
+              <div class="ai-analysis-placeholder">
+                <div class="ai-sparkle">✨</div>
+                <p>Click "Analyze My Trends" to get personalized AI insights about your usage patterns, habits, and recommendations.</p>
+                <span class="ai-note">Requires Groq API key in API Settings</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Usage Patterns -->
+          <div class="insights-section">
+            <h3>🕐 Peak Usage Hours</h3>
+            <div class="hourly-heatmap" id="hourly-heatmap">
+              <div class="hourly-heatmap-placeholder">
+                <p>Load data to see your peak usage hours</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Behavior Insights -->
+          <div class="insights-section">
+            <h3>💡 Quick Insights</h3>
+            <div class="quick-insights" id="quick-insights">
+              <div class="quick-insights-placeholder">
+                <p>Load data to see behavioral insights</p>
+              </div>
+            </div>
           </div>
         </section>
       </div>

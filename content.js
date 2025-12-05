@@ -641,6 +641,10 @@ async function showNudge(actualTime, intendedTime) {
   nudgeModal.id = 'scrollsense-nudge-modal';
   nudgeModal.innerHTML = `
     <div class="scrollsense-modal-content scrollsense-nudge-content">
+      <div class="scrollsense-ai-badge">
+        <span class="scrollsense-ai-icon">✨</span>
+        <span class="scrollsense-ai-label">ScrollSense AI</span>
+      </div>
       <p class="scrollsense-nudge-text">${nudgeText}</p>
       <div class="scrollsense-nudge-actions">
         <button class="scrollsense-btn scrollsense-btn-primary" id="scrollsense-done-btn">Done for now</button>
@@ -904,6 +908,10 @@ async function showPostSessionNudge() {
   nudgeModal.id = 'scrollsense-nudge-modal';
   nudgeModal.innerHTML = `
     <div class="scrollsense-modal-content scrollsense-nudge-content">
+      <div class="scrollsense-ai-badge">
+        <span class="scrollsense-ai-icon">✨</span>
+        <span class="scrollsense-ai-label">ScrollSense AI</span>
+      </div>
       <p class="scrollsense-nudge-text">${nudgeText}</p>
       <div class="scrollsense-nudge-actions">
         <button class="scrollsense-btn scrollsense-btn-primary" id="scrollsense-start-session-btn">Start New Session</button>
