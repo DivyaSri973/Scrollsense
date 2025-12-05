@@ -1,6 +1,61 @@
-// Options Page Script for ScrollSense
-// Handles settings, preferences, and dashboard
+/**
+ * ============================================================================
+ * SCROLLSENSE - Options Page Script
+ * ============================================================================
+ * 
+ * This file handles the full options/settings page for ScrollSense.
+ * It provides a comprehensive dashboard and configuration interface.
+ * 
+ * TABS & FEATURES:
+ * 
+ * 1. DASHBOARD TAB
+ *    - Today's usage summary (total time, sessions, platforms)
+ *    - Platform breakdown chart
+ *    - Recent sessions list
+ * 
+ * 2. GOALS TAB
+ *    - Add/remove up to 3 personal goals
+ *    - Goals are used in AI nudge messages for personalization
+ * 
+ * 3. TIME LIMITS TAB
+ *    - Set default time limits per platform
+ *    - Configure total daily limit across all platforms
+ * 
+ * 4. PREFERENCES TAB
+ *    - Blur intensity slider (0-100%)
+ *    - Message tone selection (encouraging, neutral, direct)
+ * 
+ * 5. SMART REMINDERS TAB (formerly API Settings)
+ *    - User-friendly setup wizard for Groq API
+ *    - Comparison of basic vs smart mode
+ *    - Preview AI messages before setup
+ *    - FAQ section for common questions
+ * 
+ * 6. AI INSIGHTS TAB
+ *    - Weekly usage statistics and trends
+ *    - 7-day usage trend chart
+ *    - Platform comparison cards
+ *    - Hourly usage heatmap
+ *    - AI-powered trend analysis
+ *    - Synthetic data demo for showcasing
+ * 
+ * DATA MANAGEMENT:
+ * - All data stored in chrome.storage.local
+ * - Communicates with background.js for AI features
+ * 
+ * @author ScrollSense Team
+ * @version 1.0.0
+ * ============================================================================
+ */
 
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+/**
+ * Initialize options page when DOM is ready
+ * Loads all tabs and sets up event listeners
+ */
 document.addEventListener('DOMContentLoaded', async () => {
   setupTabs();
   await loadDashboard();
@@ -12,6 +67,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
 });
 
+// ============================================================================
+// TAB NAVIGATION
+// ============================================================================
+
+/**
+ * Set up tab navigation functionality
+ * Handles clicking between different settings tabs
+ */
 // Tab Navigation
 function setupTabs() {
   const tabs = document.querySelectorAll('.nav-tab');
@@ -218,13 +281,386 @@ async function loadPreferences() {
 }
 
 // API Settings
+// ==========================================
+// SMART REMINDERS (API SETTINGS) - User-Friendly Version
+// ==========================================
+
 async function loadAPISettings() {
-  const data = await chrome.storage.local.get(['apiKey']);
-  const apiKeyInput = document.getElementById('api-key');
+  const data = await chrome.storage.local.get(['apiKey', 'userGoals', 'preferences']);
+  const apiKey = data.apiKey;
+  const userGoals = data.userGoals || [];
+  const tone = data.preferences?.messageTone || 'encouraging';
   
-  if (apiKeyInput && data.apiKey) {
-    apiKeyInput.value = data.apiKey;
+  // Update status card based on whether API key exists
+  updateSmartModeStatus(!!apiKey);
+  
+  // Update example messages with user's actual goals
+  updateExampleMessages(userGoals, tone);
+  
+  // Show/hide appropriate sections
+  const setupSection = document.getElementById('setup-section');
+  const configuredSection = document.getElementById('configured-section');
+  
+  if (apiKey) {
+    if (setupSection) setupSection.style.display = 'none';
+    if (configuredSection) configuredSection.style.display = 'block';
+  } else {
+    if (setupSection) setupSection.style.display = 'block';
+    if (configuredSection) configuredSection.style.display = 'none';
   }
+  
+  // Setup Smart Reminders event listeners
+  setupSmartRemindersListeners();
+}
+
+function updateSmartModeStatus(isEnabled) {
+  const statusCard = document.getElementById('smart-status-card');
+  const statusIcon = document.getElementById('smart-status-icon');
+  const statusTitle = document.getElementById('smart-status-title');
+  const statusDesc = document.getElementById('smart-status-desc');
+  const statusBadge = document.getElementById('smart-status-badge');
+  
+  if (isEnabled) {
+    statusCard?.classList.add('smart-enabled');
+    statusCard?.classList.remove('smart-basic');
+    if (statusIcon) statusIcon.textContent = '✨';
+    if (statusTitle) statusTitle.textContent = 'Smart Mode Active';
+    if (statusDesc) statusDesc.textContent = 'AI-powered personalized reminders enabled';
+    if (statusBadge) {
+      statusBadge.textContent = 'AI Enabled';
+      statusBadge.classList.add('badge-smart');
+    }
+  } else {
+    statusCard?.classList.add('smart-basic');
+    statusCard?.classList.remove('smart-enabled');
+    if (statusIcon) statusIcon.textContent = '💬';
+    if (statusTitle) statusTitle.textContent = 'Basic Mode Active';
+    if (statusDesc) statusDesc.textContent = 'Your reminders include your goals and preferences';
+    if (statusBadge) {
+      statusBadge.textContent = 'Working';
+      statusBadge.classList.remove('badge-smart');
+    }
+  }
+}
+
+function updateExampleMessages(userGoals, tone) {
+  const basicExample = document.getElementById('basic-example');
+  const smartExample = document.getElementById('smart-example');
+  
+  const goal = userGoals.length > 0 ? userGoals[0] : 'your goals';
+  
+  // Basic mode examples based on tone
+  const basicMessages = {
+    encouraging: `"You've been scrolling 12 min. Ready to work on ${goal}? You've got this! 💪"`,
+    neutral: `"Time check: 12 minutes. Your goal '${goal}' is waiting."`,
+    direct: `"12 minutes up. Back to ${goal}."`
+  };
+  
+  // Smart mode examples (more natural, varied)
+  const smartMessages = {
+    encouraging: `"Hey! 12 minutes on Instagram already - ${goal} is calling your name. You've totally got this! 🌟"`,
+    neutral: `"Quick heads up: you're at 12 minutes. Might be a good time to switch to ${goal}."`,
+    direct: `"12 min scrolled. ${goal} won't finish itself - let's go!"`
+  };
+  
+  if (basicExample) basicExample.textContent = basicMessages[tone] || basicMessages.encouraging;
+  if (smartExample) smartExample.textContent = smartMessages[tone] || smartMessages.encouraging;
+}
+
+function setupSmartRemindersListeners() {
+  // Preview AI button
+  const previewBtn = document.getElementById('preview-ai-btn');
+  if (previewBtn) {
+    previewBtn.addEventListener('click', showDemoPreview);
+  }
+  
+  // Close demo preview
+  const demoClose = document.getElementById('demo-close');
+  if (demoClose) {
+    demoClose.addEventListener('click', () => {
+      const demoPreview = document.getElementById('demo-preview');
+      if (demoPreview) demoPreview.style.display = 'none';
+    });
+  }
+  
+  // Toggle key visibility
+  const toggleKeyBtn = document.getElementById('toggle-key-visibility');
+  const apiKeyInput = document.getElementById('api-key');
+  if (toggleKeyBtn && apiKeyInput) {
+    toggleKeyBtn.addEventListener('click', () => {
+      if (apiKeyInput.type === 'password') {
+        apiKeyInput.type = 'text';
+        toggleKeyBtn.textContent = '🙈';
+      } else {
+        apiKeyInput.type = 'password';
+        toggleKeyBtn.textContent = '👁️';
+      }
+    });
+  }
+  
+  // Save API key with new UI
+  const saveApiBtn = document.getElementById('save-api-btn');
+  if (saveApiBtn) {
+    saveApiBtn.addEventListener('click', saveAPIKeyWithFeedback);
+  }
+  
+  // Test connection button
+  const testBtn = document.getElementById('test-connection-btn');
+  if (testBtn) {
+    testBtn.addEventListener('click', testAPIConnection);
+  }
+  
+  // Remove key button
+  const removeBtn = document.getElementById('remove-key-btn');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', removeAPIKey);
+  }
+  
+  // Visual guide button
+  const visualGuideBtn = document.getElementById('show-visual-guide');
+  if (visualGuideBtn) {
+    visualGuideBtn.addEventListener('click', showVisualGuide);
+  }
+}
+
+async function showDemoPreview() {
+  const demoPreview = document.getElementById('demo-preview');
+  const demoMessage = document.getElementById('demo-message');
+  
+  if (!demoPreview || !demoMessage) return;
+  
+  demoPreview.style.display = 'block';
+  demoMessage.textContent = 'Generating your personalized message...';
+  
+  // Get user's goals and preferences
+  const data = await chrome.storage.local.get(['userGoals', 'preferences', 'apiKey']);
+  const userGoals = data.userGoals || [];
+  const tone = data.preferences?.messageTone || 'encouraging';
+  const goal = userGoals.length > 0 ? userGoals[0] : 'managing your time';
+  
+  // If API key exists, try to get real AI message
+  if (data.apiKey) {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'getAINudge',
+        intendedTime: 5,
+        actualTime: 12,
+        userGoal: goal,
+        tone: tone
+      });
+      demoMessage.textContent = response || generateDemoMessage(goal, tone);
+    } catch (error) {
+      demoMessage.textContent = generateDemoMessage(goal, tone);
+    }
+  } else {
+    // Show what it could look like
+    demoMessage.textContent = generateDemoMessage(goal, tone);
+  }
+}
+
+function generateDemoMessage(goal, tone) {
+  const messages = {
+    encouraging: [
+      `You've been scrolling for 12 minutes! Your goal "${goal}" is waiting - you've totally got this! ✨`,
+      `Hey there! 12 min on the feed. Ready to crush "${goal}"? I believe in you! 💪`,
+      `Quick check-in: 12 minutes scrolled. "${goal}" needs your awesome focus! 🌟`
+    ],
+    neutral: [
+      `Time check: 12 minutes on social media. Your goal "${goal}" is waiting.`,
+      `You've been browsing for 12 minutes. Consider switching to "${goal}".`,
+      `12 minutes elapsed. "${goal}" could use your attention.`
+    ],
+    direct: [
+      `12 minutes scrolled. Time to work on "${goal}".`,
+      `That's 12 min. "${goal}" won't finish itself.`,
+      `12 min up. Back to "${goal}" - let's go.`
+    ]
+  };
+  
+  const toneMessages = messages[tone] || messages.encouraging;
+  return toneMessages[Math.floor(Math.random() * toneMessages.length)];
+}
+
+async function saveAPIKeyWithFeedback() {
+  const apiKeyInput = document.getElementById('api-key');
+  const saveBtn = document.getElementById('save-api-btn');
+  const btnText = saveBtn?.querySelector('.btn-text');
+  const btnLoading = saveBtn?.querySelector('.btn-loading');
+  const setupStatus = document.getElementById('setup-status');
+  
+  const apiKey = apiKeyInput?.value.trim();
+  
+  if (!apiKey) {
+    showSetupStatus('error', 'Please enter your key', 'The key field is empty. Paste your key from Groq.');
+    return;
+  }
+  
+  if (!apiKey.startsWith('gsk_')) {
+    showSetupStatus('error', 'Invalid key format', 'The key should start with "gsk_". Please copy the full key from Groq.');
+    return;
+  }
+  
+  // Show loading state
+  if (btnText) btnText.style.display = 'none';
+  if (btnLoading) btnLoading.style.display = 'inline';
+  if (saveBtn) saveBtn.disabled = true;
+  
+  // Save the key
+  await chrome.storage.local.set({ apiKey: apiKey });
+  
+  // Test the connection
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'getAINudge',
+      intendedTime: 5,
+      actualTime: 7,
+      userGoal: 'testing connection',
+      tone: 'encouraging'
+    });
+    
+    if (response && !response.includes('error')) {
+      showSetupStatus('success', '🎉 Smart Mode Enabled!', 'Your reminders are now AI-powered and personalized.');
+      
+      // Update UI after short delay
+      setTimeout(() => {
+        loadAPISettings();
+      }, 2000);
+    } else {
+      throw new Error('Connection test failed');
+    }
+  } catch (error) {
+    // Still save the key, but warn about potential issues
+    showSetupStatus('warning', 'Key Saved', 'Your key was saved. If reminders don\'t work, double-check your key in Groq.');
+    setTimeout(() => {
+      loadAPISettings();
+    }, 2000);
+  }
+  
+  // Reset button state
+  if (btnText) btnText.style.display = 'inline';
+  if (btnLoading) btnLoading.style.display = 'none';
+  if (saveBtn) saveBtn.disabled = false;
+}
+
+function showSetupStatus(type, title, message) {
+  const setupStatus = document.getElementById('setup-status');
+  const statusIcon = document.getElementById('status-icon');
+  const statusTitle = document.getElementById('status-title');
+  const statusMessage = document.getElementById('status-message');
+  
+  if (!setupStatus) return;
+  
+  setupStatus.style.display = 'flex';
+  setupStatus.className = `setup-status status-${type}`;
+  
+  const icons = { success: '✓', error: '✗', warning: '⚠' };
+  if (statusIcon) statusIcon.textContent = icons[type] || '✓';
+  if (statusTitle) statusTitle.textContent = title;
+  if (statusMessage) statusMessage.textContent = message;
+  
+  // Auto-hide after 5 seconds for success
+  if (type === 'success') {
+    setTimeout(() => {
+      setupStatus.style.display = 'none';
+    }, 5000);
+  }
+}
+
+async function testAPIConnection() {
+  const testBtn = document.getElementById('test-connection-btn');
+  if (testBtn) {
+    testBtn.disabled = true;
+    testBtn.textContent = 'Testing...';
+  }
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'getAINudge',
+      intendedTime: 5,
+      actualTime: 7,
+      userGoal: 'test',
+      tone: 'encouraging'
+    });
+    
+    showNotification('✅ Connection successful! AI is working.');
+  } catch (error) {
+    showNotification('❌ Connection failed. Check your key.');
+  }
+  
+  if (testBtn) {
+    testBtn.disabled = false;
+    testBtn.textContent = 'Test Connection';
+  }
+}
+
+async function removeAPIKey() {
+  if (confirm('Remove your Smart Mode key? You can always add it back later.')) {
+    await chrome.storage.local.remove('apiKey');
+    showNotification('Key removed. Switched to Basic Mode.');
+    loadAPISettings();
+  }
+}
+
+function showVisualGuide() {
+  // Create a modal with visual instructions
+  const modal = document.createElement('div');
+  modal.className = 'visual-guide-modal';
+  modal.innerHTML = `
+    <div class="visual-guide-content">
+      <button class="visual-guide-close">×</button>
+      <h3>📸 How to Get Your Key</h3>
+      <div class="visual-guide-steps">
+        <div class="guide-step">
+          <div class="guide-step-num">1</div>
+          <div class="guide-step-content">
+            <p>After signing in to Groq, look for <strong>"API Keys"</strong> in the left sidebar menu</p>
+            <div class="guide-illustration">
+              <div class="mock-sidebar">
+                <div class="mock-item">🏠 Overview</div>
+                <div class="mock-item">📊 Usage</div>
+                <div class="mock-item highlight">🔑 API Keys ← Click here</div>
+                <div class="mock-item">⚙️ Settings</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">2</div>
+          <div class="guide-step-content">
+            <p>Click the <strong>"Create API Key"</strong> button</p>
+            <div class="guide-illustration">
+              <div class="mock-button">+ Create API Key</div>
+            </div>
+          </div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">3</div>
+          <div class="guide-step-content">
+            <p>Give it a name (like "ScrollSense") and click <strong>Create</strong></p>
+          </div>
+        </div>
+        <div class="guide-step">
+          <div class="guide-step-num">4</div>
+          <div class="guide-step-content">
+            <p>Copy the key that appears (it starts with <code>gsk_</code>)</p>
+            <div class="guide-illustration">
+              <div class="mock-key">gsk_xxxxxxxxxxxx... <span class="mock-copy">📋 Copy</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary guide-done-btn">Got it!</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Close handlers
+  modal.querySelector('.visual-guide-close').addEventListener('click', () => modal.remove());
+  modal.querySelector('.guide-done-btn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
 }
 
 // Event Listeners
@@ -314,27 +750,7 @@ function setupEventListeners() {
     });
   }
   
-  // Save API key
-  const saveAPIBtn = document.getElementById('save-api-btn');
-  if (saveAPIBtn) {
-    saveAPIBtn.addEventListener('click', async () => {
-      const apiKey = document.getElementById('api-key').value.trim();
-      const apiStatus = document.getElementById('api-status');
-      const statusMessage = apiStatus.querySelector('.status-message');
-      
-      if (apiKey) {
-        await chrome.storage.local.set({ apiKey: apiKey });
-        apiStatus.style.display = 'block';
-        apiStatus.className = 'api-status success';
-        statusMessage.textContent = 'API key saved successfully!';
-      } else {
-        await chrome.storage.local.remove('apiKey');
-        apiStatus.style.display = 'block';
-        apiStatus.className = 'api-status success';
-        statusMessage.textContent = 'API key removed. Using fallback messages.';
-      }
-    });
-  }
+  // Note: API key save is now handled by setupSmartRemindersListeners()
 }
 
 // ==========================================

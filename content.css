@@ -596,6 +596,270 @@
   }
 }
 
+/* ==========================================
+   BLUR CONTROL INDICATOR & POPUP
+   ========================================== */
+
+/* Blur Control Indicator (Right Side - below timer) */
+#scrollsense-blur-control {
+  position: fixed;
+  right: 0;
+  top: calc(50% + 40px);
+  transform: translateY(-50%);
+  background: rgba(59, 130, 246, 0.9);
+  padding: 8px 12px 8px 10px;
+  border-radius: 10px 0 0 10px;
+  cursor: pointer;
+  z-index: 999996;
+  box-shadow: -2px 2px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+  animation: slideInFromRight 0.3s ease;
+}
+
+#scrollsense-blur-control:hover {
+  padding-right: 16px;
+  background: rgba(59, 130, 246, 1);
+  box-shadow: -4px 2px 16px rgba(59, 130, 246, 0.4);
+}
+
+.blur-control-icon {
+  font-size: 16px;
+  display: block;
+  animation: blurPulse 2s ease-in-out infinite;
+}
+
+@keyframes blurPulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Blur Control Popup (Right Side) */
+#scrollsense-blur-popup {
+  position: fixed;
+  right: 50px;
+  top: calc(50% + 40px);
+  transform: translateY(-50%);
+  background: rgba(30, 30, 35, 0.98);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  z-index: 999998;
+  min-width: 280px;
+  max-width: 340px;
+  animation: blurPopupSlideIn 0.25s ease;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes blurPopupSlideIn {
+  from {
+    transform: translateY(-50%) translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(-50%) translateX(0);
+    opacity: 1;
+  }
+}
+
+.blur-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+}
+
+.blur-popup-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.blur-popup-close {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.blur-popup-close:hover {
+  opacity: 1;
+}
+
+.blur-popup-content {
+  padding: 16px;
+}
+
+.blur-popup-message {
+  font-size: 13px;
+  color: #d1d5db;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+.blur-popup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.blur-popup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.blur-popup-primary {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #ffffff;
+}
+
+.blur-popup-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.blur-popup-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.blur-popup-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.blur-popup-tertiary {
+  background: transparent;
+  color: #9ca3af;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  font-size: 12px;
+}
+
+.blur-popup-tertiary:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Disable buttons group */
+.blur-popup-disable-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+}
+
+.disable-label {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.disable-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.disable-buttons .blur-popup-btn {
+  flex: 1;
+}
+
+.blur-popup-note {
+  font-size: 11px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-style: italic;
+}
+
+/* Temporary Notification */
+#scrollsense-temp-notification {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(16, 185, 129, 0.95);
+  color: #ffffff;
+  padding: 14px 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+  z-index: 999999;
+  animation: notificationSlideUp 0.3s ease;
+}
+
+.notification-icon {
+  font-size: 18px;
+  background: rgba(255, 255, 255, 0.2);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-message {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@keyframes notificationSlideUp {
+  from {
+    transform: translateX(-50%) translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.notification-fadeout {
+  animation: notificationFadeOut 0.3s ease forwards;
+}
+
+@keyframes notificationFadeOut {
+  from {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-50%) translateY(10px);
+    opacity: 0;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 600px) {
   .scrollsense-modal-content {
@@ -617,6 +881,20 @@
   
   .scrollsense-btn {
     width: 100%;
+  }
+  
+  #scrollsense-blur-popup {
+    left: 10px;
+    right: 10px;
+    min-width: auto;
+    max-width: none;
+    top: auto;
+    bottom: 80px;
+    transform: none;
+  }
+  
+  .disable-buttons {
+    flex-direction: column;
   }
 }
 

@@ -20,7 +20,7 @@
         <button class="nav-tab" data-tab="goals">Goals</button>
         <button class="nav-tab" data-tab="limits">Time Limits</button>
         <button class="nav-tab" data-tab="preferences">Preferences</button>
-        <button class="nav-tab" data-tab="api">API Settings</button>
+        <button class="nav-tab" data-tab="api">Smart Reminders</button>
         <button class="nav-tab" data-tab="insights">AI Insights</button>
       </nav>
       
@@ -162,28 +162,237 @@
         </section>
       </div>
       
-      <!-- API Settings Tab -->
+      <!-- API Settings Tab - Redesigned for User-Friendliness -->
       <div class="tab-content" id="api-tab">
         <section class="options-section">
-          <h2>AI Integration</h2>
-          <p class="section-description">Configure Groq (GroqCloud) for personalized nudges (optional)</p>
           
-          <div class="api-info">
-            <p>ScrollSense uses Groq's fast, efficient GenAI models to generate personalized, context-aware reminders based on your goals and usage patterns.</p>
-            <p style="margin-top: 8px;"><strong>Privacy:</strong> Your API key is stored locally and never shared. All data stays on your device.</p>
+          <!-- Smart Reminders Header -->
+          <div class="smart-reminders-header">
+            <div class="smart-icon">✨</div>
+            <h2>Smart Reminders</h2>
+            <p class="section-description">Get personalized messages that actually understand you</p>
           </div>
           
-          <div class="input-group">
-            <label for="api-key" class="input-label">Groq API Key</label>
-            <input type="password" id="api-key" class="input" placeholder="gsk_...">
-            <p class="input-hint">Get your API key from the <a href="https://console.groq.com/" target="_blank">Groq Console</a></p>
+          <!-- Current Status Card -->
+          <div class="smart-status-card" id="smart-status-card">
+            <div class="smart-status-icon" id="smart-status-icon">💬</div>
+            <div class="smart-status-content">
+              <h3 id="smart-status-title">Basic Mode Active</h3>
+              <p id="smart-status-desc">Your reminders include your goals and preferences</p>
+            </div>
+            <div class="smart-status-badge" id="smart-status-badge">Working</div>
           </div>
           
-          <button id="save-api-btn" class="btn btn-primary">Save API Key</button>
-          
-          <div class="api-status" id="api-status" style="display: none;">
-            <p class="status-message"></p>
+          <!-- Comparison Section -->
+          <div class="reminder-comparison">
+            <h3>See the Difference</h3>
+            <div class="comparison-cards">
+              <div class="comparison-card basic">
+                <div class="comparison-header">
+                  <span class="comparison-badge">💬 Basic Mode</span>
+                  <span class="comparison-tag">Always Available</span>
+                </div>
+                <div class="comparison-example">
+                  <p id="basic-example">"You've been scrolling 12 min. Ready to work on your goals? 💪"</p>
+                </div>
+                <ul class="comparison-features">
+                  <li>✓ Uses your personal goals</li>
+                  <li>✓ Tracks your session time</li>
+                  <li>✓ Matches your preferred tone</li>
+                  <li>✗ Same message patterns</li>
+                </ul>
+              </div>
+              
+              <div class="comparison-card smart">
+                <div class="comparison-header">
+                  <span class="comparison-badge">✨ Smart Mode</span>
+                  <span class="comparison-tag">AI-Powered</span>
+                </div>
+                <div class="comparison-example">
+                  <p id="smart-example">"Hey! 12 minutes on Instagram - your thesis chapter on methodology is waiting. You've got this! 📚"</p>
+                </div>
+                <ul class="comparison-features">
+                  <li>✓ Everything in Basic, plus:</li>
+                  <li>✓ Unique messages every time</li>
+                  <li>✓ Contextually aware</li>
+                  <li>✓ Feels like a supportive friend</li>
+                </ul>
+              </div>
+            </div>
           </div>
+          
+          <!-- Try Demo Button -->
+          <div class="demo-section">
+            <button id="preview-ai-btn" class="btn btn-demo">
+              <span class="btn-icon">🎯</span>
+              Preview Smart Reminder
+            </button>
+            <p class="demo-hint">See what a personalized AI message looks like for you</p>
+          </div>
+          
+          <!-- Demo Preview Modal (hidden by default) -->
+          <div class="demo-preview" id="demo-preview" style="display: none;">
+            <div class="demo-preview-header">
+              <span class="demo-badge">✨ ScrollSense AI</span>
+              <button class="demo-close" id="demo-close">×</button>
+            </div>
+            <div class="demo-preview-content">
+              <p id="demo-message">Loading...</p>
+            </div>
+            <div class="demo-preview-footer">
+              <span>This is what you'd see when your time is up</span>
+            </div>
+          </div>
+          
+          <!-- Setup Section -->
+          <div class="setup-section" id="setup-section">
+            <div class="setup-header">
+              <h3>🚀 Enable Smart Mode</h3>
+              <p>Free setup • Takes 2 minutes • No credit card needed</p>
+            </div>
+            
+            <!-- Setup Wizard -->
+            <div class="setup-wizard" id="setup-wizard">
+              <!-- Step 1 -->
+              <div class="wizard-step" id="wizard-step-1">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <h4>Create a Free Account</h4>
+                  <p>Groq provides free AI that powers your smart reminders</p>
+                  <div class="step-action">
+                    <a href="https://console.groq.com/" target="_blank" class="btn btn-primary" id="open-groq-btn">
+                      Open Groq (Free) →
+                    </a>
+                  </div>
+                  <div class="step-details">
+                    <span class="detail-item">✓ Sign up with Google or Email</span>
+                    <span class="detail-item">✓ No payment required</span>
+                    <span class="detail-item">✓ Takes 30 seconds</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Step 2 -->
+              <div class="wizard-step" id="wizard-step-2">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <h4>Get Your Personal Key</h4>
+                  <p>This connects ScrollSense to the AI</p>
+                  <div class="step-instructions">
+                    <div class="instruction-item">
+                      <span class="instruction-num">a.</span>
+                      <span>In Groq, click <strong>"API Keys"</strong> in the left menu</span>
+                    </div>
+                    <div class="instruction-item">
+                      <span class="instruction-num">b.</span>
+                      <span>Click <strong>"Create API Key"</strong></span>
+                    </div>
+                    <div class="instruction-item">
+                      <span class="instruction-num">c.</span>
+                      <span>Give it a name like "ScrollSense"</span>
+                    </div>
+                    <div class="instruction-item">
+                      <span class="instruction-num">d.</span>
+                      <span>Copy the key (starts with <code>gsk_</code>)</span>
+                    </div>
+                  </div>
+                  <button class="btn btn-secondary btn-small" id="show-visual-guide">
+                    📸 Show me where (screenshot)
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Step 3 -->
+              <div class="wizard-step" id="wizard-step-3">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <h4>Paste Your Key Here</h4>
+                  <p>Almost done! Just paste and save.</p>
+                  <div class="key-input-group">
+                    <input type="password" id="api-key" class="input key-input" placeholder="Paste your key here (gsk_...)">
+                    <button class="btn btn-icon-only" id="toggle-key-visibility" title="Show/hide key">
+                      👁️
+                    </button>
+                  </div>
+                  <button id="save-api-btn" class="btn btn-primary btn-save-key">
+                    <span class="btn-text">Save & Enable Smart Mode</span>
+                    <span class="btn-loading" style="display: none;">Verifying...</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Success/Error Status -->
+            <div class="setup-status" id="setup-status" style="display: none;">
+              <div class="status-icon" id="status-icon">✓</div>
+              <div class="status-content">
+                <h4 id="status-title">Smart Mode Enabled!</h4>
+                <p id="status-message">Your reminders are now AI-powered and personalized.</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Already Configured Section -->
+          <div class="configured-section" id="configured-section" style="display: none;">
+            <div class="configured-card">
+              <div class="configured-icon">✅</div>
+              <div class="configured-content">
+                <h3>Smart Mode is Active</h3>
+                <p>Your reminders are AI-powered and personalized</p>
+              </div>
+            </div>
+            <div class="configured-actions">
+              <button class="btn btn-secondary" id="test-connection-btn">Test Connection</button>
+              <button class="btn btn-danger-outline" id="remove-key-btn">Remove Key</button>
+            </div>
+          </div>
+          
+          <!-- Privacy & Trust Section -->
+          <div class="privacy-section">
+            <h4>🔒 Your Privacy is Protected</h4>
+            <div class="privacy-items">
+              <div class="privacy-item">
+                <span class="privacy-icon">🏠</span>
+                <span>Your key stays on your device only</span>
+              </div>
+              <div class="privacy-item">
+                <span class="privacy-icon">🚫</span>
+                <span>We never see or store your key</span>
+              </div>
+              <div class="privacy-item">
+                <span class="privacy-icon">📝</span>
+                <span>Only your goals & time are sent for messages</span>
+              </div>
+              <div class="privacy-item">
+                <span class="privacy-icon">🗑️</span>
+                <span>Remove your key anytime</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- FAQ Section -->
+          <div class="faq-section">
+            <h4>Common Questions</h4>
+            <div class="faq-items">
+              <details class="faq-item">
+                <summary>What is Groq?</summary>
+                <p>Groq is a company that provides fast, free AI services. Think of it like a smart assistant that helps write your reminder messages. It's completely free for personal use.</p>
+              </details>
+              <details class="faq-item">
+                <summary>Is it really free?</summary>
+                <p>Yes! Groq offers generous free usage that's more than enough for ScrollSense. You don't need to enter any payment information.</p>
+              </details>
+              <details class="faq-item">
+                <summary>What if I don't set this up?</summary>
+                <p>ScrollSense works great without it! You'll still get helpful reminders based on your goals - they'll just follow set patterns instead of being uniquely generated each time.</p>
+              </details>
+              <details class="faq-item">
+                <summary>Can I remove this later?</summary>
+                <p>Absolutely! You can remove your key anytime and ScrollSense will switch back to basic mode automatically.</p>
+              </details>
+            </div>
+          </div>
+          
         </section>
       </div>
       
@@ -274,8 +483,8 @@
             <div class="ai-analysis-container" id="ai-analysis">
               <div class="ai-analysis-placeholder">
                 <div class="ai-sparkle">✨</div>
-                <p>Click "Analyze My Trends" to get personalized AI insights about your usage patterns, habits, and recommendations.</p>
-                <span class="ai-note">Requires Groq API key in API Settings</span>
+                <p>Click "Analyze My Trends" to get personalized insights about your usage patterns, habits, and recommendations.</p>
+                <span class="ai-note">✓ Works with or without Smart Mode enabled</span>
               </div>
             </div>
           </div>

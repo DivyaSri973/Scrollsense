@@ -1,13 +1,63 @@
-// Background Service Worker for ScrollSense
-// Handles session tracking, AI integration, and data management
+/**
+ * ============================================================================
+ * SCROLLSENSE - Background Service Worker
+ * ============================================================================
+ * 
+ * This file serves as the background service worker for the ScrollSense
+ * Chrome extension. It handles:
+ * 
+ * 1. SESSION MANAGEMENT
+ *    - Starting and ending user sessions
+ *    - Tracking session duration and intent
+ *    - Storing session history
+ * 
+ * 2. DATA PERSISTENCE
+ *    - Managing chrome.storage.local for all user data
+ *    - Daily usage tracking and reset
+ *    - Platform-specific statistics
+ * 
+ * 3. AI INTEGRATION
+ *    - Generating personalized nudge messages via Groq API
+ *    - Analyzing usage trends with AI
+ *    - Providing fallback messages when API unavailable
+ * 
+ * 4. TAB MONITORING
+ *    - Detecting supported platforms (Instagram, LinkedIn, Reddit)
+ *    - Tracking tab changes and updates
+ * 
+ * ARCHITECTURE:
+ * - Uses Chrome Extension Manifest V3
+ * - Communicates with content.js via chrome.runtime messaging
+ * - Stores data in chrome.storage.local (all data stays on user's device)
+ * 
+ * @author ScrollSense Team
+ * @version 1.0.0
+ * ============================================================================
+ */
 
+// ============================================================================
+// CONSTANTS & CONFIGURATION
+// ============================================================================
+
+/**
+ * Default time limits for each platform (in minutes)
+ * These values are used when user hasn't set custom limits
+ */
 const DEFAULT_PLATFORM_LIMITS = {
-  instagram: 10,
-  linkedin: 30,
-  reddit: 15
+  instagram: 10,  // Instagram tends to be more addictive (Reels)
+  linkedin: 30,   // LinkedIn is more professional/purposeful
+  reddit: 15      // Reddit is mixed educational/entertainment
 };
 
-// Initialize storage on install
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+/**
+ * Initialize extension storage on first install
+ * Sets up default values for all user preferences and data
+ * This runs only once when the extension is first installed
+ */
 chrome.runtime.onInstalled.addListener(async () => {
   const data = await chrome.storage.local.get([
     'userGoals',
@@ -18,34 +68,50 @@ chrome.runtime.onInstalled.addListener(async () => {
     'currentSession'
   ]);
 
+  // Only set defaults if this is a fresh install (no existing data)
   if (!data.userGoals) {
     await chrome.storage.local.set({
-      userGoals: [],
-      platformLimits: DEFAULT_PLATFORM_LIMITS,
-      sessions: [],
-      dailyUsage: {},
+      userGoals: [],                              // User's personal goals (up to 3)
+      platformLimits: DEFAULT_PLATFORM_LIMITS,   // Time limits per platform
+      sessions: [],                              // Session history array
+      dailyUsage: {},                            // Today's usage stats
       preferences: {
-        blurIntensity: 50,
-        messageTone: 'encouraging',
-        dailyLimit: 120
+        blurIntensity: 50,                       // Blur effect strength (0-100%)
+        messageTone: 'encouraging',              // AI message tone
+        dailyLimit: 120                          // Total daily limit across all platforms
       },
-      currentSession: null
+      currentSession: null                       // Active session data
     });
   }
 });
 
-// Track tab changes and session start
+// ============================================================================
+// TAB MONITORING
+// ============================================================================
+
+/**
+ * Listen for tab activation changes
+ * Triggered when user switches between tabs
+ */
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   const tab = await chrome.tabs.get(activeInfo.tabId);
   await handleTabChange(tab);
 });
 
+/**
+ * Listen for tab URL updates
+ * Triggered when a tab navigates to a new URL
+ */
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     await handleTabChange(tab);
   }
 });
 
+/**
+ * Handle tab changes - detect platform and prepare for session
+ * @param {chrome.tabs.Tab} tab - The tab that was activated or updated
+ */
 async function handleTabChange(tab) {
   const platform = detectPlatform(tab.url);
   if (!platform) return;
@@ -57,7 +123,7 @@ async function handleTabChange(tab) {
     // Reset daily usage if it's a new day
     await resetDailyUsageIfNeeded();
     
-    // Store platform info for content script
+    // Store platform info for content script to use
     await chrome.storage.local.set({
       currentPlatform: platform,
       sessionStartTime: Date.now()
@@ -65,6 +131,11 @@ async function handleTabChange(tab) {
   }
 }
 
+/**
+ * Detect which supported platform a URL belongs to
+ * @param {string} url - The URL to check
+ * @returns {string|null} - Platform name or null if not supported
+ */
 function detectPlatform(url) {
   if (!url) return null;
   if (url.includes('instagram.com')) return 'instagram';
@@ -73,11 +144,21 @@ function detectPlatform(url) {
   return null;
 }
 
+// ============================================================================
+// DAILY USAGE MANAGEMENT
+// ============================================================================
+
+/**
+ * Reset daily usage statistics if it's a new day
+ * Compares today's date with the last reset date
+ * Automatically resets at midnight
+ */
 async function resetDailyUsageIfNeeded() {
   const data = await chrome.storage.local.get(['dailyUsage']);
   const today = new Date().toDateString();
   const lastReset = data.dailyUsage?.lastReset;
   
+  // If the stored date doesn't match today, reset all counters
   if (lastReset !== today) {
     await chrome.storage.local.set({
       dailyUsage: {
@@ -91,7 +172,21 @@ async function resetDailyUsageIfNeeded() {
   }
 }
 
-// Start a new session with intent
+// ============================================================================
+// MESSAGE HANDLING
+// ============================================================================
+
+/**
+ * Central message handler for all communication from content scripts and popup
+ * Routes different action types to appropriate handler functions
+ * 
+ * Actions supported:
+ * - startSession: Begin a new timed session
+ * - endSession: End current session and save data
+ * - getAINudge: Get AI-generated reminder message
+ * - updateDailyUsage: Update usage statistics
+ * - analyzeTrends: Get AI analysis of usage patterns
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'startSession') {
     startSession(request.intent, request.platform).then(sendResponse);
@@ -120,23 +215,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// ============================================================================
+// SESSION MANAGEMENT
+// ============================================================================
+
+/**
+ * Start a new session with user's intended duration
+ * @param {number} intent - Intended session duration in minutes
+ * @param {string} platform - Platform name (instagram, linkedin, reddit)
+ * @returns {Object} - Success status
+ */
 async function startSession(intent, platform) {
   const session = {
     platform,
     intent,
     startTime: Date.now(),
-    intendedTime: intent * 60000 // Convert to milliseconds
+    intendedTime: intent * 60000 // Convert minutes to milliseconds
   };
   
   await chrome.storage.local.set({ currentSession: session });
   return { success: true };
 }
 
+/**
+ * End current session and save to history
+ * @param {string} platform - Platform name
+ * @param {number} actualTime - Actual time spent in milliseconds
+ * @returns {Object} - Success status
+ */
 async function endSession(platform, actualTime) {
   const data = await chrome.storage.local.get(['currentSession', 'sessions', 'dailyUsage']);
   const session = data.currentSession;
   
   if (session) {
+    // Create session record for history
     const sessionData = {
       platform: session.platform,
       intendedTime: session.intent,
@@ -147,7 +259,7 @@ async function endSession(platform, actualTime) {
     const sessions = data.sessions || [];
     sessions.push(sessionData);
     
-    // Keep only last 100 sessions
+    // Keep only last 100 sessions to prevent storage bloat
     if (sessions.length > 100) {
       sessions.shift();
     }
@@ -157,13 +269,19 @@ async function endSession(platform, actualTime) {
       currentSession: null
     });
     
-    // Update daily usage
+    // Update daily usage statistics
     await updateDailyUsage(platform, sessionData.actualTime);
   }
   
   return { success: true };
 }
 
+/**
+ * Update daily usage statistics for a platform
+ * @param {string} platform - Platform name
+ * @param {number} minutes - Minutes to add
+ * @returns {Object} - Updated daily usage object
+ */
 async function updateDailyUsage(platform, minutes) {
   await resetDailyUsageIfNeeded();
   const data = await chrome.storage.local.get(['dailyUsage']);
@@ -175,6 +293,7 @@ async function updateDailyUsage(platform, minutes) {
     total: 0
   };
   
+  // Add minutes to specific platform and recalculate total
   dailyUsage[platform] = (dailyUsage[platform] || 0) + minutes;
   dailyUsage.total = (dailyUsage.instagram || 0) + (dailyUsage.linkedin || 0) + (dailyUsage.reddit || 0);
   
@@ -182,30 +301,46 @@ async function updateDailyUsage(platform, minutes) {
   return dailyUsage;
 }
 
+// ============================================================================
+// AI INTEGRATION - NUDGE MESSAGES
+// ============================================================================
+
+/**
+ * Get AI-generated nudge message using Groq API
+ * Falls back to local messages if API unavailable
+ * 
+ * @param {number} intendedTime - User's intended session duration (0 for post-session)
+ * @param {number} actualTime - Actual time spent
+ * @param {string} userGoal - User's current goal
+ * @param {string} tone - Message tone (encouraging, neutral, direct)
+ * @returns {string} - Generated nudge message
+ */
 async function getAINudge(intendedTime, actualTime, userGoal, tone) {
   const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
   
+  // Get user preferences and API key
   const data = await chrome.storage.local.get(['preferences', 'apiKey']);
   const preferences = data.preferences || {};
   const API_KEY = data.apiKey;
   const messageTone = tone || preferences.messageTone || 'encouraging';
   
+  // If no API key, use fallback messages
   if (!API_KEY) {
-    // Fallback message if API key not set
     return generateFallbackMessage(intendedTime, actualTime, userGoal, messageTone);
   }
   
-  // Different prompts for active session vs post-session
+  // Build appropriate prompt based on context
   let prompt;
   if (intendedTime === 0) {
-    // Post-session nudge (user skipped session complete popup)
+    // Post-session context: User is browsing after session ended
     prompt = `Generate a supportive, non-judgmental reminder for a user who has been scrolling for ${actualTime} minutes after their session ended. Their current goal is: ${userGoal || 'managing social media time'}. Encourage them to start a new mindful session. Keep the message under 20 words, with a ${messageTone} tone.`;
   } else {
-    // Active session nudge (during an active session)
+    // Active session context: User exceeded intended time
     prompt = `Generate a supportive, non-judgmental reminder for a user who planned to scroll ${intendedTime} minutes but has been scrolling ${actualTime} minutes. Their current goal is: ${userGoal || 'managing social media time'}. Keep the message under 20 words, with a ${messageTone} tone.`;
   }
   
   try {
+    // Make API request to Groq
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
@@ -213,7 +348,7 @@ async function getAINudge(intendedTime, actualTime, userGoal, tone) {
         'Authorization': `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant', // Fast and reliable Groq model
+        model: 'llama-3.1-8b-instant', // Fast, reliable model
         messages: [
           {
             role: 'system',
@@ -224,13 +359,13 @@ async function getAINudge(intendedTime, actualTime, userGoal, tone) {
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 60
+        temperature: 0.7,  // Some creativity but not too random
+        max_tokens: 60     // Keep responses short
       })
     });
     
+    // Handle API errors
     if (!response.ok) {
-      // Get error details from response
       let errorMessage = 'API request failed';
       try {
         const errorData = await response.json();
@@ -242,6 +377,7 @@ async function getAINudge(intendedTime, actualTime, userGoal, tone) {
       throw new Error(errorMessage);
     }
     
+    // Extract message from response
     const result = await response.json();
     const aiMessage = result.choices?.[0]?.message?.content?.trim();
     if (aiMessage) {
@@ -255,56 +391,94 @@ async function getAINudge(intendedTime, actualTime, userGoal, tone) {
   }
 }
 
+/**
+ * Generate fallback message when AI API is unavailable
+ * Provides varied, personalized messages based on context
+ * 
+ * @param {number} intendedTime - Intended session duration (0 for post-session)
+ * @param {number} actualTime - Actual time spent
+ * @param {string} userGoal - User's goal
+ * @param {string} tone - Message tone
+ * @returns {string} - Generated message
+ */
 function generateFallbackMessage(intendedTime, actualTime, userGoal, tone) {
   const overTime = actualTime - intendedTime;
+  const goal = userGoal || 'your goals';
   
-  // Different messages for post-session vs active session
+  // Message templates organized by context and tone
   let messages;
   if (intendedTime === 0) {
-    // Post-session messages
+    // POST-SESSION MESSAGES
+    // User is browsing after their session ended, no active session
     messages = {
       encouraging: [
-        `You've been scrolling ${actualTime} min since your session ended. Ready to start a mindful session? 🌟`,
-        `Time check: ${actualTime} min. How about setting a new intention? 💪`,
-        `${actualTime} minutes scrolling. Ready to work on "${userGoal || 'your goals'}"?`
+        `Hey! ${actualTime} minutes since your session. "${goal}" is waiting for your awesome focus! 🌟`,
+        `Quick check-in: ${actualTime} min of scrolling. Ready to tackle "${goal}"? You've got this! 💪`,
+        `${actualTime} minutes browsing time! How about channeling that energy into "${goal}"? ✨`,
+        `Time flies! ${actualTime} min already. "${goal}" would love your attention right about now! 🎯`,
+        `Friendly nudge: ${actualTime} min scrolled. Your future self will thank you for working on "${goal}"! 🙌`
       ],
       neutral: [
-        `You've been scrolling ${actualTime} minutes since your session ended.`,
-        `Time check: ${actualTime} min.`,
-        `Current browsing: ${actualTime} minutes.`
+        `You've been browsing for ${actualTime} minutes since your session ended.`,
+        `Time check: ${actualTime} min. Your goal "${goal}" is still there.`,
+        `${actualTime} minutes of scrolling. Consider setting a new intention.`,
+        `Quick update: ${actualTime} min browsing time logged.`,
+        `Checking in: ${actualTime} minutes since your last session.`
       ],
       direct: [
-        `You've been scrolling ${actualTime} min. Start a new session?`,
-        `${actualTime} minutes up. Set a new intention.`,
-        `Time to be mindful. You've been on for ${actualTime} min.`
+        `${actualTime} minutes scrolling. Time for "${goal}".`,
+        `${actualTime} min up. Back to "${goal}"?`,
+        `Heads up: ${actualTime} min since session. "${goal}" awaits.`,
+        `${actualTime} minutes. Start a new session or switch to "${goal}".`,
+        `Time check: ${actualTime} min. Ready to refocus?`
       ]
     };
   } else {
-    // Active session messages
+    // ACTIVE SESSION MESSAGES
+    // User exceeded their intended time during an active session
+    const overTimeText = overTime > 0 ? ` (${overTime} min over)` : '';
     messages = {
       encouraging: [
-        `You've been scrolling ${actualTime} min. Ready to work on "${userGoal || 'your goals'}"? 🌟`,
-        `Time check: ${actualTime} min. You've got this! 💪`,
-        `${actualTime} minutes in. How about we tackle "${userGoal || 'that task'}" now?`
+        `${actualTime} minutes in${overTimeText}! "${goal}" is calling your name - you've totally got this! 🌟`,
+        `Hey there! ${actualTime} min scrolled. Ready to show "${goal}" what you're made of? 💪`,
+        `Time check: ${actualTime} min! Your awesome goal "${goal}" could use your energy right now! ✨`,
+        `${actualTime} minutes of scrolling${overTimeText}. "${goal}" believes in you - time to make it happen! 🎯`,
+        `Quick nudge: ${actualTime} min! How about we crush "${goal}" together? You're doing great! 🙌`
       ],
       neutral: [
-        `You've been scrolling ${actualTime} minutes.`,
-        `Time check: ${actualTime} min.`,
-        `Current session: ${actualTime} minutes.`
+        `You've been scrolling for ${actualTime} minutes${overTimeText}.`,
+        `Session update: ${actualTime} min elapsed. Goal: "${goal}".`,
+        `Time check: ${actualTime} minutes${overTimeText}. Your goal is "${goal}".`,
+        `${actualTime} min on this session. Planned: ${intendedTime} min.`,
+        `Current session: ${actualTime} minutes. Remember: "${goal}".`
       ],
       direct: [
-        `Back to work. You've been scrolling ${actualTime} min.`,
-        `${actualTime} minutes up. Time to focus.`,
-        `Done scrolling? You've been on for ${actualTime} min.`
+        `${actualTime} min${overTimeText}. Time for "${goal}".`,
+        `Session at ${actualTime} min. Back to "${goal}".`,
+        `${actualTime} minutes scrolled. "${goal}" is waiting.`,
+        `Time's up at ${actualTime} min. Focus on "${goal}".`,
+        `${actualTime} min${overTimeText}. Let's switch to "${goal}".`
       ]
     };
   }
   
+  // Select random message from appropriate tone category
   const toneMessages = messages[tone] || messages.encouraging;
   return toneMessages[Math.floor(Math.random() * toneMessages.length)];
 }
 
-// Analyze trends with AI for insights page
+// ============================================================================
+// AI INTEGRATION - TREND ANALYSIS
+// ============================================================================
+
+/**
+ * Analyze user's usage trends using AI
+ * Provides personalized insights about usage patterns
+ * Used in the AI Insights tab of the options page
+ * 
+ * @param {Object} usageData - Weekly usage data summary
+ * @returns {Object} - Analysis result with success status
+ */
 async function analyzeTrendsWithAI(usageData) {
   const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
   
@@ -312,11 +486,12 @@ async function analyzeTrendsWithAI(usageData) {
   const API_KEY = data.apiKey;
   const userGoals = data.userGoals || [];
   
+  // Can't analyze without API key
   if (!API_KEY) {
     return { analysis: null, error: 'No API key configured' };
   }
   
-  // Build a comprehensive prompt for trend analysis
+  // Build detailed prompt with user's data
   const platformSummary = Object.entries(usageData.platforms)
     .map(([platform, stats]) => `${platform}: ${stats.total}min total, ${stats.overtime}min overtime, ${stats.sessions} sessions`)
     .join('; ');
@@ -390,11 +565,22 @@ Keep the tone supportive and non-judgmental. Use simple language and be encourag
   }
 }
 
-// Get adaptive suggestions after 5+ sessions
+// ============================================================================
+// ADAPTIVE SUGGESTIONS
+// ============================================================================
+
+/**
+ * Generate adaptive time limit suggestions based on user behavior
+ * Analyzes past sessions to suggest more realistic limits
+ * Only activates after 5+ sessions to have enough data
+ * 
+ * @returns {Object|null} - Suggested limits per platform or null if not enough data
+ */
 async function getAdaptiveSuggestions() {
   const data = await chrome.storage.local.get(['sessions']);
   const sessions = data.sessions || [];
   
+  // Need at least 5 sessions for meaningful suggestions
   if (sessions.length < 5) {
     return null;
   }
@@ -409,18 +595,18 @@ async function getAdaptiveSuggestions() {
     platformStats[session.platform].actual.push(session.actualTime);
   });
   
+  // Generate suggestions for platforms where user consistently exceeds intent
   const suggestions = {};
   Object.keys(platformStats).forEach(platform => {
     const stats = platformStats[platform];
     const avgIntended = stats.intended.reduce((a, b) => a + b, 0) / stats.intended.length;
     const avgActual = stats.actual.reduce((a, b) => a + b, 0) / stats.actual.length;
     
-    // Suggest limit based on average actual time (rounded to nearest 5)
+    // If actual time consistently exceeds intended, suggest higher limit
     if (avgActual > avgIntended) {
-      suggestions[platform] = Math.round(avgActual / 5) * 5;
+      suggestions[platform] = Math.round(avgActual / 5) * 5; // Round to nearest 5
     }
   });
   
   return suggestions;
 }
-

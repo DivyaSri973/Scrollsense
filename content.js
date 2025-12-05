@@ -1,41 +1,127 @@
-// Content Script for ScrollSense
-// Handles UI overlays, progressive blur, and session tracking
+/**
+ * ============================================================================
+ * SCROLLSENSE - Content Script
+ * ============================================================================
+ * 
+ * This is the main content script that runs on supported social media platforms.
+ * It handles all UI interactions, overlays, and session tracking directly on
+ * the webpage.
+ * 
+ * MAIN RESPONSIBILITIES:
+ * 
+ * 1. SESSION MANAGEMENT
+ *    - Display intent prompt when user visits supported platform
+ *    - Track session duration with floating timer
+ *    - Handle session start, pause (tab hidden), and end
+ * 
+ * 2. PROGRESSIVE BLUR EFFECT
+ *    - Apply gradual blur when user exceeds intended time
+ *    - Post-session blur for users who continue browsing
+ *    - User can control/disable blur via blur control popup
+ * 
+ * 3. AI-POWERED NUDGES
+ *    - Display personalized reminder messages from AI
+ *    - Show "ScrollSense AI" badge to indicate AI-generated content
+ *    - Allow user to continue, end session, or start new session
+ * 
+ * 4. USER CONTROL FEATURES
+ *    - Blur control indicator with options to disable
+ *    - Skip options (skip now, 1 hour, today)
+ *    - Mini prompt for returning users who skipped
+ * 
+ * UI COMPONENTS CREATED:
+ * - Intent prompt modal (session start)
+ * - Floating timer (right side)
+ * - Timer popup (usage stats)
+ * - Nudge modal (AI messages)
+ * - Session complete modal
+ * - Blur overlay (progressive blur)
+ * - Blur control indicator and popup
+ * - Mini prompt (non-intrusive)
+ * - Temporary notifications
+ * 
+ * SUPPORTED PLATFORMS:
+ * - Instagram (instagram.com)
+ * - LinkedIn (linkedin.com)
+ * - Reddit (reddit.com)
+ * 
+ * COMMUNICATION:
+ * - Sends messages to background.js for data persistence
+ * - Receives messages from popup.js for session control
+ * 
+ * @author ScrollSense Team
+ * @version 1.0.0
+ * ============================================================================
+ */
 
-let sessionTimer = null;
-let blurOverlay = null;
-let intentPrompt = null;
-let nudgeModal = null;
-let currentSession = null;
-let platform = null;
-let hiddenTime = 0; // Total time the tab has been hidden
-let hiddenStartTime = null; // When the tab was hidden
-let floatingTimer = null; // Floating timer display element
-let timerPopup = null; // Popup showing usage details
-let currentElapsed = 0; // Track current elapsed time for popup
-let miniPrompt = null; // Less intrusive prompt for returning users
-let sessionCompleteModal = null; // Session complete popup
-let postSessionBlurTimer = null; // Timer for post-session progressive blur
-let isPostSessionBlurActive = false; // Track if post-session blur is active
+// ============================================================================
+// GLOBAL STATE VARIABLES
+// ============================================================================
+
+// Timer and session state
+let sessionTimer = null;           // Interval ID for session timer
+let currentSession = null;         // Current active session data
+let currentElapsed = 0;            // Current elapsed time in milliseconds
+
+// Tab visibility tracking (for pausing timer when tab is hidden)
+let hiddenTime = 0;                // Total accumulated hidden time
+let hiddenStartTime = null;        // Timestamp when tab was hidden
+
+// Platform detection
+let platform = null;               // Current platform ('instagram', 'linkedin', 'reddit')
+
+// UI Element References
+let blurOverlay = null;            // Full-screen blur overlay element
+let intentPrompt = null;           // Initial intent selection modal
+let nudgeModal = null;             // AI nudge message modal
+let floatingTimer = null;          // Floating timer display (right side)
+let timerPopup = null;             // Expanded usage stats popup
+let miniPrompt = null;             // Less intrusive prompt for returning users
+let sessionCompleteModal = null;   // Session completion modal
+
+// Post-session blur state
+let postSessionBlurTimer = null;   // Interval ID for progressive blur
+let isPostSessionBlurActive = false; // Whether post-session blur is running
 let postSessionBlurStartTime = null; // When post-session blur started
-let postSessionNudgeTimer = null; // Timer for periodic nudges during post-session blur
+let postSessionNudgeTimer = null;  // Interval ID for periodic nudges
 
-// Initialize on page load
+// Blur control UI state
+let blurControlIndicator = null;   // Small blur control icon (right side)
+let blurControlPopup = null;       // Expanded blur control options popup
+let isBlurActive = false;          // Whether any blur effect is currently active
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+/**
+ * Initialize the content script when page loads
+ * Detects platform, sets up extension, and starts listening for visibility changes
+ * This is an IIFE (Immediately Invoked Function Expression) that runs on script load
+ */
 (async function init() {
   platform = detectPlatform();
-  if (!platform) return;
+  if (!platform) return; // Exit if not on a supported platform
   
-  // Wait for page to be fully loaded
+  // Wait for page to be fully loaded before setting up UI
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupExtension);
   } else {
     setupExtension();
   }
   
-  // Listen for tab visibility changes
+  // Listen for tab visibility changes to pause/resume timer
   document.addEventListener('visibilitychange', handleVisibilityChange);
 })();
 
-// Handle tab visibility changes - pause/resume timer
+// ============================================================================
+// TAB VISIBILITY HANDLING
+// ============================================================================
+
+/**
+ * Handle tab visibility changes - pause timer when hidden, resume when visible
+ * This ensures we only count time the user actually spends looking at the page
+ */
 function handleVisibilityChange() {
   if (document.hidden) {
     // Tab is now hidden - pause the timer
@@ -70,6 +156,14 @@ function handleVisibilityChange() {
   }
 }
 
+// ============================================================================
+// PLATFORM DETECTION
+// ============================================================================
+
+/**
+ * Detect which supported platform the user is on
+ * @returns {string|null} Platform name or null if not supported
+ */
 function detectPlatform() {
   const hostname = window.location.hostname;
   if (hostname.includes('instagram.com')) return 'instagram';
@@ -78,6 +172,14 @@ function detectPlatform() {
   return null;
 }
 
+// ============================================================================
+// EXTENSION SETUP
+// ============================================================================
+
+/**
+ * Main setup function - checks for existing session and shows appropriate UI
+ * Called after page is fully loaded
+ */
 async function setupExtension() {
   // Check if session already started
   const data = await chrome.storage.local.get(['currentSession', 'currentPlatform', 'skipUntil']);
@@ -159,6 +261,14 @@ async function setupExtension() {
   });
 }
 
+// ============================================================================
+// INTENT PROMPT & SESSION START
+// ============================================================================
+
+/**
+ * Display the intent prompt modal asking user how long they plan to browse
+ * This is the main entry point for starting a mindful session
+ */
 function showIntentPrompt() {
   // Remove any existing prompt or mini prompt
   if (intentPrompt) {
@@ -315,16 +425,10 @@ async function startSessionWithIntent(minutes) {
     intentPrompt = null;
   }
   
-  // Stop any post-session blur if active
-  if (isPostSessionBlurActive && postSessionBlurTimer) {
-    clearInterval(postSessionBlurTimer);
-    postSessionBlurTimer = null;
-    isPostSessionBlurActive = false;
-    if (blurOverlay) {
-      blurOverlay.style.backdropFilter = 'blur(0px)';
-      blurOverlay.style.webkitBackdropFilter = 'blur(0px)';
-    }
-  }
+  // Stop any post-session blur if active and completely remove blur
+  stopPostSessionBlur();
+  removeBlurEffect();
+  hideBlurControlIndicator();
   
   // Send message to background to start session
   const response = await chrome.runtime.sendMessage({
@@ -354,6 +458,15 @@ async function startSessionWithIntent(minutes) {
   }
 }
 
+// ============================================================================
+// SESSION TIMER & TRACKING
+// ============================================================================
+
+/**
+ * Start the session timer interval
+ * Updates floating timer display every second
+ * Triggers nudge and blur when user exceeds intended time
+ */
 function startSessionTimer() {
   if (!currentSession) return;
   
@@ -604,6 +717,15 @@ function hideFloatingTimer() {
   currentElapsed = 0;
 }
 
+// ============================================================================
+// PROGRESSIVE BLUR EFFECT
+// ============================================================================
+
+/**
+ * Apply progressive blur effect to the page
+ * Blur increases gradually as user exceeds their intended time
+ * @param {number} percent - Blur percentage (0-100)
+ */
 function applyProgressiveBlur(percent) {
   if (!blurOverlay) {
     blurOverlay = document.createElement('div');
@@ -617,8 +739,24 @@ function applyProgressiveBlur(percent) {
   const blurPixels = (percent / 100) * 6; // Max 6px during active session
   blurOverlay.style.backdropFilter = `blur(${blurPixels}px)`;
   blurOverlay.style.webkitBackdropFilter = `blur(${blurPixels}px)`;
+  
+  // Show blur control indicator when blur is active
+  if (blurPixels > 0.5 && !isBlurActive) {
+    isBlurActive = true;
+    showBlurControlIndicator('session');
+  }
 }
 
+// ============================================================================
+// AI NUDGE MODALS
+// ============================================================================
+
+/**
+ * Show AI-generated nudge message when user exceeds intended time
+ * Displays "ScrollSense AI" badge and personalized message
+ * @param {number} actualTime - Actual time spent (minutes)
+ * @param {number} intendedTime - User's intended time (minutes)
+ */
 async function showNudge(actualTime, intendedTime) {
   // Get user goals and preferences
   const data = await chrome.storage.local.get(['userGoals', 'preferences']);
@@ -666,15 +804,24 @@ async function showNudge(actualTime, intendedTime) {
       currentSession.intendedTime += 10 * 60000;
       nudgeModal.remove();
       nudgeModal = null;
-      // Remove blur temporarily
+      // Remove blur temporarily and hide control indicator
       if (blurOverlay) {
         blurOverlay.style.backdropFilter = 'blur(0px)';
         blurOverlay.style.webkitBackdropFilter = 'blur(0px)';
       }
+      hideBlurControlIndicator();
     }
   });
 }
 
+// ============================================================================
+// SESSION END & COMPLETION
+// ============================================================================
+
+/**
+ * End the current session and save data
+ * Cleans up timers and UI, shows completion modal
+ */
 async function endSession() {
   if (!currentSession) return;
   
@@ -701,6 +848,9 @@ async function endSession() {
     blurOverlay.style.backdropFilter = 'blur(0px)';
     blurOverlay.style.webkitBackdropFilter = 'blur(0px)';
   }
+  
+  // Hide blur control indicator
+  hideBlurControlIndicator();
   
   if (nudgeModal) {
     nudgeModal.remove();
@@ -783,6 +933,15 @@ function showCompletionMessage() {
   });
 }
 
+// ============================================================================
+// POST-SESSION BLUR
+// ============================================================================
+
+/**
+ * Start progressive blur after session ends (if user continues browsing)
+ * Blur gradually increases over 2 minutes to encourage mindful use
+ * Periodic nudges also appear during post-session blur
+ */
 async function startPostSessionBlur() {
   // Get blur intensity setting
   const data = await chrome.storage.local.get(['preferences']);
@@ -797,7 +956,11 @@ async function startPostSessionBlur() {
   const maxBlurPixels = (cappedBlurIntensity / 100) * 12;
   
   isPostSessionBlurActive = true;
+  isBlurActive = true;
   postSessionBlurStartTime = Date.now();
+  
+  // Show blur control indicator for post-session blur
+  showBlurControlIndicator('post-session');
   
   // Clear any existing timers
   if (postSessionBlurTimer) {
@@ -929,20 +1092,13 @@ async function showPostSessionNudge() {
       nudgeModal = null;
     }
     // Stop post-session blur
-    if (postSessionBlurTimer) {
-      clearInterval(postSessionBlurTimer);
-      postSessionBlurTimer = null;
-    }
-    if (postSessionNudgeTimer) {
-      clearInterval(postSessionNudgeTimer);
-      postSessionNudgeTimer = null;
-    }
-    isPostSessionBlurActive = false;
-    postSessionBlurStartTime = null;
+    stopPostSessionBlur();
     if (blurOverlay) {
       blurOverlay.style.backdropFilter = 'blur(0px)';
       blurOverlay.style.webkitBackdropFilter = 'blur(0px)';
     }
+    // Hide blur control indicator
+    hideBlurControlIndicator();
     // Show intent prompt for new session
     showIntentPrompt();
   });
@@ -954,6 +1110,239 @@ async function showPostSessionNudge() {
     }
     // Continue with blur - nudge will appear again after interval
   });
+}
+
+// ==========================================
+// BLUR CONTROL INDICATOR (Left Side)
+// ==========================================
+
+function showBlurControlIndicator(type) {
+  // Don't create if already exists
+  if (blurControlIndicator) return;
+  
+  blurControlIndicator = document.createElement('div');
+  blurControlIndicator.id = 'scrollsense-blur-control';
+  blurControlIndicator.innerHTML = `
+    <span class="blur-control-icon">🔵</span>
+  `;
+  blurControlIndicator.title = 'Blur active - Click for options';
+  
+  document.body.appendChild(blurControlIndicator);
+  
+  // Add click handler to show popup
+  blurControlIndicator.addEventListener('click', () => toggleBlurControlPopup(type));
+}
+
+function toggleBlurControlPopup(type) {
+  if (blurControlPopup) {
+    hideBlurControlPopup();
+    return;
+  }
+  
+  blurControlPopup = document.createElement('div');
+  blurControlPopup.id = 'scrollsense-blur-popup';
+  
+  const isPostSession = type === 'post-session';
+  const platformName = platform ? platform.charAt(0).toUpperCase() + platform.slice(1) : 'this site';
+  
+  blurControlPopup.innerHTML = `
+    <div class="blur-popup-header">
+      <span class="blur-popup-title">🔵 Blur Active</span>
+      <button class="blur-popup-close" id="blur-popup-close">×</button>
+    </div>
+    <div class="blur-popup-content">
+      <p class="blur-popup-message">
+        ${isPostSession 
+          ? 'Screen is gradually blurring to encourage mindful use.' 
+          : 'Screen blur helps signal when you\'ve exceeded your intended time.'}
+      </p>
+      <div class="blur-popup-actions">
+        <button class="blur-popup-btn blur-popup-primary" id="blur-start-session">
+          ${isPostSession ? '🎯 Start New Session' : '⏱️ Extend Time'}
+        </button>
+        <button class="blur-popup-btn blur-popup-secondary" id="blur-remove-temp">
+          👁️ Remove for 10 min
+        </button>
+        <div class="blur-popup-disable-group">
+          <span class="disable-label">🚫 Disable ScrollSense:</span>
+          <div class="disable-buttons">
+            <button class="blur-popup-btn blur-popup-tertiary" id="blur-disable-session">
+              This session
+            </button>
+            <button class="blur-popup-btn blur-popup-tertiary" id="blur-disable-today">
+              For today
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="blur-popup-note">
+        ScrollSense respects your autonomy. You're always in control.
+      </p>
+    </div>
+  `;
+  
+  document.body.appendChild(blurControlPopup);
+  
+  // Event listeners
+  blurControlPopup.querySelector('#blur-popup-close').addEventListener('click', hideBlurControlPopup);
+  
+  blurControlPopup.querySelector('#blur-start-session').addEventListener('click', () => {
+    hideBlurControlPopup();
+    hideBlurControlIndicator();
+    removeBlurEffect();
+    if (isPostSession) {
+      showIntentPrompt();
+    } else {
+      // Extend current session by 10 minutes
+      if (currentSession) {
+        currentSession.intendedTime += 10 * 60000;
+        if (nudgeModal) {
+          nudgeModal.remove();
+          nudgeModal = null;
+        }
+      }
+    }
+  });
+  
+  blurControlPopup.querySelector('#blur-remove-temp').addEventListener('click', async () => {
+    hideBlurControlPopup();
+    hideBlurControlIndicator();
+    removeBlurEffect();
+    
+    // Set a temporary skip for 10 minutes
+    const skipUntil = Date.now() + (10 * 60 * 1000);
+    const data = await chrome.storage.local.get(['blurSkipUntil']);
+    const skipData = data.blurSkipUntil || {};
+    skipData[platform] = skipUntil;
+    await chrome.storage.local.set({ blurSkipUntil: skipData });
+    
+    // Stop post-session blur if active
+    stopPostSessionBlur();
+    
+    showTemporaryNotification('Blur removed for 10 minutes');
+  });
+  
+  blurControlPopup.querySelector('#blur-disable-session').addEventListener('click', async () => {
+    hideBlurControlPopup();
+    hideBlurControlIndicator();
+    removeBlurEffect();
+    
+    // Disable ScrollSense for this browser session (until tab refresh/close)
+    const data = await chrome.storage.local.get(['blurSkipUntil']);
+    const skipData = data.blurSkipUntil || {};
+    // Set to a very long time, will reset on page reload
+    skipData[platform] = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+    skipData[`${platform}_sessionOnly`] = true; // Mark as session-only
+    await chrome.storage.local.set({ blurSkipUntil: skipData });
+    
+    // Stop everything
+    stopPostSessionBlur();
+    if (sessionTimer) {
+      clearInterval(sessionTimer);
+      sessionTimer = null;
+    }
+    currentSession = null;
+    
+    const platformName = platform ? platform.charAt(0).toUpperCase() + platform.slice(1) : 'this site';
+    showTemporaryNotification(`ScrollSense paused for this ${platformName} session`);
+  });
+  
+  blurControlPopup.querySelector('#blur-disable-today').addEventListener('click', async () => {
+    hideBlurControlPopup();
+    hideBlurControlIndicator();
+    removeBlurEffect();
+    
+    // Disable ScrollSense on this platform for today (until midnight)
+    const tomorrow = new Date();
+    tomorrow.setHours(24, 0, 0, 0);
+    const skipUntil = tomorrow.getTime();
+    
+    const data = await chrome.storage.local.get(['blurSkipUntil']);
+    const skipData = data.blurSkipUntil || {};
+    skipData[platform] = skipUntil;
+    await chrome.storage.local.set({ blurSkipUntil: skipData });
+    
+    // Stop everything
+    stopPostSessionBlur();
+    if (sessionTimer) {
+      clearInterval(sessionTimer);
+      sessionTimer = null;
+    }
+    currentSession = null;
+    
+    const platformName = platform ? platform.charAt(0).toUpperCase() + platform.slice(1) : 'this site';
+    showTemporaryNotification(`ScrollSense disabled on ${platformName} for today`);
+  });
+  
+  // Close when clicking outside
+  setTimeout(() => {
+    document.addEventListener('click', closeBlurPopupOnOutsideClick);
+  }, 100);
+}
+
+function closeBlurPopupOnOutsideClick(e) {
+  if (blurControlPopup && !blurControlPopup.contains(e.target) && 
+      blurControlIndicator && !blurControlIndicator.contains(e.target)) {
+    hideBlurControlPopup();
+  }
+}
+
+function hideBlurControlPopup() {
+  if (blurControlPopup) {
+    blurControlPopup.remove();
+    blurControlPopup = null;
+    document.removeEventListener('click', closeBlurPopupOnOutsideClick);
+  }
+}
+
+function hideBlurControlIndicator() {
+  if (blurControlIndicator) {
+    blurControlIndicator.remove();
+    blurControlIndicator = null;
+  }
+  isBlurActive = false;
+}
+
+function removeBlurEffect() {
+  if (blurOverlay) {
+    blurOverlay.style.backdropFilter = 'blur(0px)';
+    blurOverlay.style.webkitBackdropFilter = 'blur(0px)';
+    blurOverlay.style.background = 'transparent';
+    // Completely remove the overlay element to ensure blur is gone
+    blurOverlay.remove();
+    blurOverlay = null;
+  }
+  isBlurActive = false;
+}
+
+function stopPostSessionBlur() {
+  if (postSessionBlurTimer) {
+    clearInterval(postSessionBlurTimer);
+    postSessionBlurTimer = null;
+  }
+  if (postSessionNudgeTimer) {
+    clearInterval(postSessionNudgeTimer);
+    postSessionNudgeTimer = null;
+  }
+  isPostSessionBlurActive = false;
+  postSessionBlurStartTime = null;
+}
+
+function showTemporaryNotification(message) {
+  const notification = document.createElement('div');
+  notification.id = 'scrollsense-temp-notification';
+  notification.innerHTML = `
+    <span class="notification-icon">✓</span>
+    <span class="notification-message">${message}</span>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    notification.classList.add('notification-fadeout');
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
 }
 
 // Clean up on page unload
